@@ -26,8 +26,22 @@ class ModuleProgressViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ModuleProgress.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        module = serializer.validated_data['module']
+        completed = serializer.validated_data.get('completed', False)
+
+        progress, created = ModuleProgress.objects.update_or_create(
+            user=request.user,
+            module=module,
+            defaults={'completed': completed},
+        )
+
+        output_serializer = self.get_serializer(progress)
+        response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(output_serializer.data, status=response_status)
 
 
 class CourseProgressViewSet(viewsets.ModelViewSet):
@@ -37,8 +51,25 @@ class CourseProgressViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return CourseProgress.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        course = serializer.validated_data['course']
+        progress, created = CourseProgress.objects.update_or_create(
+            user=request.user,
+            course=course,
+            defaults={
+                'completed_modules': serializer.validated_data.get('completed_modules', 0),
+                'total_modules': serializer.validated_data.get('total_modules', 0),
+                'progress': serializer.validated_data.get('progress', 0),
+                'completed': serializer.validated_data.get('completed', False),
+            },
+        )
+
+        output_serializer = self.get_serializer(progress)
+        response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(output_serializer.data, status=response_status)
 
 class CompleteModuleView(APIView):
     permission_classes = [IsAuthenticated]

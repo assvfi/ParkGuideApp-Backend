@@ -109,6 +109,7 @@ venv\Scripts\activate
 
 ```bash
 pip install django djangorestframework djangorestframework-simplejwt psycopg2-binary
+pip install boto3
 ```
 
 3. (Optional) Install additional packages from `requirements.txt` if you use it in your environment:
@@ -149,6 +150,9 @@ Server URL:
 ## API Base Paths
 - App API root: `/api/`
 - Auth API root: `/api/accounts/`
+- Notifications API root: `/api/notifications/`
+- User progress API root: `/api/user-progress/`
+- Secure files API root: `/api/secure-files/`
 
 ## Authentication Endpoints
 - `POST /api/accounts/register/` – register user
@@ -162,6 +166,96 @@ All course/progress endpoints require `Authorization: Bearer <access_token>`.
 - `GET /api/progress/` – list module progress rows for logged-in user
 - `GET /api/course-progress/` – list course progress rows for logged-in user
 - `POST /api/complete-module/` – mark module completed and auto-update course progress
+
+## Notification Endpoints
+- `GET /api/notifications/items/` – list notifications for logged-in user
+- `POST /api/notifications/items/{id}/mark-read/` – mark one notification as read
+- `POST /api/notifications/items/mark-all-read/` – mark all as read
+- `POST /api/notifications/items/clear-read/` – delete all read notifications for user
+
+All notification endpoints require `Authorization: Bearer <access_token>`.
+
+## Secure File Endpoints (Private S3)
+- `GET /api/secure-files/files/` – list your uploaded files (admin sees all)
+- `POST /api/secure-files/files/` – upload file with multipart field `file`
+- `GET /api/secure-files/files/{id}/` – file metadata + temporary download URL
+- `GET /api/secure-files/files/{id}/download-url/` – new temporary download URL
+- `DELETE /api/secure-files/files/{id}/` – delete a file
+
+All secure-file endpoints require `Authorization: Bearer <access_token>`.
+
+## Private S3 Setup
+
+Set environment variables before running server/commands:
+
+```bash
+export S3_ENABLED=true
+export S3_BUCKET_NAME=parkguide-private-files
+export S3_REGION_NAME=ap-southeast-1
+export AWS_ACCESS_KEY_ID=<your-access-key>
+export AWS_SECRET_ACCESS_KEY=<your-secret-key>
+
+# Optional (for MinIO/LocalStack or S3-compatible providers)
+export S3_ENDPOINT_URL=http://127.0.0.1:9000
+
+# Optional (seconds for presigned URL)
+export S3_PRESIGNED_URL_EXPIRY=300
+```
+
+Bootstrap bucket with private-access block:
+
+```bash
+python manage.py bootstrap_private_bucket
+```
+
+### Local Demo Setup (MinIO)
+
+If you want to demo S3 locally without AWS, use MinIO:
+
+```bash
+sudo docker run -d --name parkguide-minio \
+  -p 9000:9000 -p 9001:9001 \
+  -e MINIO_ROOT_USER=minioadmin \
+  -e MINIO_ROOT_PASSWORD=minioadmin \
+  minio/minio server /data --console-address ":9001"
+```
+
+If Docker says the container name already exists:
+
+```bash
+sudo docker start parkguide-minio
+# or recreate cleanly:
+sudo docker rm -f parkguide-minio
+```
+
+Use these environment values for MinIO:
+
+```bash
+export S3_ENABLED=true
+export S3_BUCKET_NAME=parkguide-private-files
+export S3_REGION_NAME=us-east-1
+export S3_ENDPOINT_URL=http://127.0.0.1:9000
+export AWS_ACCESS_KEY_ID=minioadmin
+export AWS_SECRET_ACCESS_KEY=minioadmin
+export S3_PRESIGNED_URL_EXPIRY=300
+```
+
+Then run:
+
+```bash
+python manage.py bootstrap_private_bucket
+python manage.py runserver
+adb reverse tcp:9000 tpc:9000
+```
+
+MinIO console URL:
+- `http://127.0.0.1:9001`
+
+### Quick Verification
+
+1. Login to get JWT via `/api/accounts/login/`.
+2. Upload a file to `/api/secure-files/files/` as multipart form field `file`.
+3. Confirm `download_url` is returned and works for a short time.
 
 ### `POST /api/complete-module/` request body
 
@@ -193,11 +287,39 @@ Open Django admin:
 Available sections under Courses:
 - Course
 - Module
-- Module progresss
-- Course progresss
+
+Available sections under User Progress:
+- Module progress
+- Course progress
+- Badge
+- User badge
+
+Available sections under Secure Files:
+- Secure files (includes drag-and-drop upload area in admin list page)
+
+Available sections under Notifications:
+- Notification
+- User notification
+
+Admin send flow:
+1. Create a Notification in Django admin.
+2. Select it from list view.
+3. Run action: **Send selected notifications to all users**.
+
+Demo badge setup command:
+- `python manage.py seed_demo_badges` (creates selectable badges from current training courses/module data)
 
 ## Notes
 - `ModuleProgress` and `CourseProgress` are the source of truth for learner progress.
-- Quiz data exists inside module content (`Module.quiz`), but quiz attempts are not persisted as a separate model.
+- Admins can create badges and manage them with a pending workflow (`pending`, `granted`, `rejected`) based on each user's completed module count.
+- Admin actions support syncing pending badges for eligible users, auto-approving pending badges, and auto-rejecting pending badges.
+- Admins can also use a one-click action: **Sync pending then auto approve eligible users**.
+- Notifications can be broadcast from admin to all regular app users in one action (excludes staff/admin accounts).
+- New notifications created from admin are auto-broadcast immediately to all regular app users (no second step needed).
+- Quiz data exists inside module content (`Module.quiz`) and now supports multiple quizzes per module.
+- Training JSON can use either `quiz` (single object, backward compatible) or `quizzes` (array of quiz objects).
+- Each quiz supports single-answer (`correctIndex`) and multi-answer (`correctIndexes`) with up to 3 correct choices.
+- Posting to progress endpoints reuses and amends existing progress records for the same user/course or user/module instead of creating new IDs.
 - This backend currently uses hardcoded DB credentials in settings (fine for class/dev use, not production).
 - The current `requirements.txt` appears to include many machine-specific packages; use the core dependency install command above as the minimum reliable setup.
+- Secure files are stored in a private S3 bucket and accessed only with valid app auth + short-lived presigned URLs.

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'courses',
+    'user_progress.apps.UserProgressConfig',
+    'secure_files.apps.SecureFilesConfig',
+    'notifications.apps.NotificationsConfig',
     'accounts',
     'rest_framework.authtoken',
 ]
@@ -145,3 +149,20 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+
+def _env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ('1', 'true', 'yes', 'on')
+
+# S3 Storage Settings for secure file handling (using MinIO or AWS S3)
+S3_ENABLED = _env_bool('S3_ENABLED', True)
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'parkguide-private-files')
+S3_REGION_NAME = os.getenv('S3_REGION_NAME', 'us-east-1')
+S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'http://127.0.0.1:9000')
+S3_PRESIGNED_URL_EXPIRY = int(os.getenv('S3_PRESIGNED_URL_EXPIRY', '300'))
+
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', 'minioadmin')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', 'minioadmin')

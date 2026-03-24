@@ -3,6 +3,7 @@ attrs==25.4.0
 autocommand==2.2.2
 beautifulsoup4==4.14.3
 btrfsutil==6.19
+boto3==1.40.57
 cbor2==5.8.0
 certifi==2026.2.25
 cffi==2.0.0

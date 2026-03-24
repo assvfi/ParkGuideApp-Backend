@@ -29,31 +29,67 @@
           "ms": "Panduan mesti memahami geografi, laluan pelawat, dan laluan kecemasan di Taman Negara Bako.",
           "zh": "导游必须了解巴哥国家公园的地理、游客路线和紧急出口。"
         },
-        "quiz": {
-          "question": {
-            "en": "What is the primary responsibility of a park guide during orientation?",
-            "ms": "Apakah tanggungjawab utama seorang panduan taman semasa orientasi?",
-            "zh": "在导览期间，公园导游的主要职责是什么？"
-          },
-          "options": {
-            "en": [
-              "Ensure visitor safety",
-              "Sell souvenirs",
-              "Collect entrance fees"
-            ],
-            "ms": [
-              "Memastikan keselamatan pengunjung",
-              "Menjual cenderahati",
-              "Mengutip bayaran masuk"
-            ],
-            "zh": [
-              "确保游客安全",
-              "出售纪念品",
-              "收取入园费"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What is the primary responsibility of a park guide during orientation?",
+              "ms": "Apakah tanggungjawab utama seorang panduan taman semasa orientasi?",
+              "zh": "在导览期间，公园导游的主要职责是什么？"
+            },
+            "options": {
+              "en": [
+                "Ensure visitor safety",
+                "Sell souvenirs",
+                "Collect entrance fees"
+              ],
+              "ms": [
+                "Memastikan keselamatan pengunjung",
+                "Menjual cenderahati",
+                "Mengutip bayaran masuk"
+              ],
+              "zh": [
+                "确保游客安全",
+                "出售纪念品",
+                "收取入园费"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
           },
-          "correctIndex": 0
-        }
+          {
+            "question": {
+              "en": "Which TWO actions are required during park orientation?",
+              "ms": "Apakah DUA tindakan yang wajib semasa orientasi taman?",
+              "zh": "在公园导览中，哪两项行动是必须的？"
+            },
+            "options": {
+              "en": [
+                "Explain emergency exits",
+                "Review visitor routes",
+                "Sell snacks",
+                "Skip safety briefing"
+              ],
+              "ms": [
+                "Terangkan laluan kecemasan",
+                "Semak laluan pelawat",
+                "Jual snek",
+                "Langkau taklimat keselamatan"
+              ],
+              "zh": [
+                "说明紧急出口",
+                "讲解游客路线",
+                "售卖零食",
+                "跳过安全简报"
+              ]
+            },
+            "correctIndexes": [
+              0,
+              1
+            ]
+          }
+        ]
       },
       {
         "id": "1.2",
@@ -77,31 +113,36 @@
           "ms": "Kekalkan jarak selamat dari hidupan liar untuk mengelakkan penularan penyakit dan gangguan tingkah laku.",
           "zh": "保持与野生动物的安全距离，以防止疾病传播和行为干扰。"
         },
-        "quiz": {
-          "question": {
-            "en": "What is the minimum safe viewing distance?",
-            "ms": "Apakah jarak minimum yang selamat untuk melihat hidupan liar?",
-            "zh": "观看野生动物的最小安全距离是多少？"
-          },
-          "options": {
-            "en": [
-              "10 meters",
-              "2 meters",
-              "5 meters"
-            ],
-            "ms": [
-              "10 meter",
-              "2 meter",
-              "5 meter"
-            ],
-            "zh": [
-              "10米",
-              "2米",
-              "5米"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What is the minimum safe viewing distance?",
+              "ms": "Apakah jarak minimum yang selamat untuk melihat hidupan liar?",
+              "zh": "观看野生动物的最小安全距离是多少？"
+            },
+            "options": {
+              "en": [
+                "10 meters",
+                "2 meters",
+                "5 meters"
+              ],
+              "ms": [
+                "10 meter",
+                "2 meter",
+                "5 meter"
+              ],
+              "zh": [
+                "10米",
+                "2米",
+                "5米"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       },
       {
         "id": "1.3",
@@ -125,31 +166,36 @@
           "ms": "Pengunjung tidak boleh memberi makan atau menyentuh hidupan liar. Panduan mesti menguatkuasakan peraturan ini.",
           "zh": "游客不得喂食或触摸野生动物。导游必须执行这些规则。"
         },
-        "quiz": {
-          "question": {
-            "en": "What should visitors NEVER do?",
-            "ms": "Apakah yang TIDAK patut dilakukan oleh pengunjung?",
-            "zh": "游客绝对不应做什么？"
-          },
-          "options": {
-            "en": [
-              "Feed animals",
-              "Observe quietly",
-              "Take photos"
-            ],
-            "ms": [
-              "Memberi makan haiwan",
-              "Memerhati dengan tenang",
-              "Mengambil gambar"
-            ],
-            "zh": [
-              "喂食动物",
-              "安静观察",
-              "拍照"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What should visitors NEVER do?",
+              "ms": "Apakah yang TIDAK patut dilakukan oleh pengunjung?",
+              "zh": "游客绝对不应做什么？"
+            },
+            "options": {
+              "en": [
+                "Feed animals",
+                "Observe quietly",
+                "Take photos"
+              ],
+              "ms": [
+                "Memberi makan haiwan",
+                "Memerhati dengan tenang",
+                "Mengambil gambar"
+              ],
+              "zh": [
+                "喂食动物",
+                "安静观察",
+                "拍照"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       }
     ]
   },
@@ -183,31 +229,68 @@
           "ms": "Panduan mesti mengekalkan kawalan ke atas kumpulan lawatan mereka dan memastikan pengunjung mematuhi peraturan taman.",
           "zh": "导游必须控制旅游团并确保游客遵守公园规则。"
         },
-        "quiz": {
-          "question": {
-            "en": "What is the main role of a guide in group management?",
-            "ms": "Apakah peranan utama panduan dalam pengurusan kumpulan?",
-            "zh": "导游在团队管理中的主要角色是什么？"
-          },
-          "options": {
-            "en": [
-              "Ensure safety",
-              "Entertain guests",
-              "Sell merchandise"
-            ],
-            "ms": [
-              "Memastikan keselamatan",
-              "Menghiburkan tetamu",
-              "Menjual barangan"
-            ],
-            "zh": [
-              "确保安全",
-              "娱乐游客",
-              "销售商品"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What is the main role of a guide in group management?",
+              "ms": "Apakah peranan utama panduan dalam pengurusan kumpulan?",
+              "zh": "导游在团队管理中的主要角色是什么？"
+            },
+            "options": {
+              "en": [
+                "Ensure safety",
+                "Entertain guests",
+                "Sell merchandise"
+              ],
+              "ms": [
+                "Memastikan keselamatan",
+                "Menghiburkan tetamu",
+                "Menjual barangan"
+              ],
+              "zh": [
+                "确保安全",
+                "娱乐游客",
+                "销售商品"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
           },
-          "correctIndex": 0
-        }
+          {
+            "question": {
+              "en": "Select THREE best practices for managing tour groups.",
+              "ms": "Pilih TIGA amalan terbaik untuk mengurus kumpulan lawatan.",
+              "zh": "选择三项管理旅游团的最佳做法。"
+            },
+            "options": {
+              "en": [
+                "Headcount frequently",
+                "Set clear rules",
+                "Monitor pace",
+                "Ignore stragglers"
+              ],
+              "ms": [
+                "Kira ahli kumpulan kerap",
+                "Tetapkan peraturan jelas",
+                "Pantau kelajuan kumpulan",
+                "Abaikan yang ketinggalan"
+              ],
+              "zh": [
+                "经常点名人数",
+                "设定明确规则",
+                "控制行进节奏",
+                "忽略掉队游客"
+              ]
+            },
+            "correctIndexes": [
+              0,
+              1,
+              2
+            ]
+          }
+        ]
       },
       {
         "id": "2.2",
@@ -231,31 +314,36 @@
           "ms": "Komunikasi yang jelas memastikan pengunjung memahami garis panduan taman dan prosedur keselamatan.",
           "zh": "清晰的沟通可确保游客了解公园指南和安全程序。"
         },
-        "quiz": {
-          "question": {
-            "en": "What improves visitor understanding?",
-            "ms": "Apakah yang meningkatkan pemahaman pengunjung?",
-            "zh": "什么能提高游客的理解？"
-          },
-          "options": {
-            "en": [
-              "Clear explanations",
-              "Ignoring questions",
-              "Talking quickly"
-            ],
-            "ms": [
-              "Penerangan jelas",
-              "Mengabaikan soalan",
-              "Bercakap dengan cepat"
-            ],
-            "zh": [
-              "清楚解释",
-              "忽略问题",
-              "说得快"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What improves visitor understanding?",
+              "ms": "Apakah yang meningkatkan pemahaman pengunjung?",
+              "zh": "什么能提高游客的理解？"
+            },
+            "options": {
+              "en": [
+                "Clear explanations",
+                "Ignoring questions",
+                "Talking quickly"
+              ],
+              "ms": [
+                "Penerangan jelas",
+                "Mengabaikan soalan",
+                "Bercakap dengan cepat"
+              ],
+              "zh": [
+                "清楚解释",
+                "忽略问题",
+                "说得快"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       }
     ]
   },
@@ -289,31 +377,67 @@
           "ms": "Taman negara melindungi ekosistem dan kepelbagaian biologi melalui usaha pemuliharaan.",
           "zh": "国家公园通过保护工作保护生态系统和生物多样性。"
         },
-        "quiz": {
-          "question": {
-            "en": "Why are national parks important?",
-            "ms": "Mengapa taman negara penting?",
-            "zh": "为什么国家公园很重要？"
-          },
-          "options": {
-            "en": [
-              "Protect biodiversity",
-              "Increase tourism only",
-              "Sell wildlife"
-            ],
-            "ms": [
-              "Melindungi kepelbagaian biologi",
-              "Meningkatkan pelancongan sahaja",
-              "Menjual hidupan liar"
-            ],
-            "zh": [
-              "保护生物多样性",
-              "仅增加旅游",
-              "出售野生动物"
+        "quizzes": [
+          {
+            "question": {
+              "en": "Why are national parks important?",
+              "ms": "Mengapa taman negara penting?",
+              "zh": "为什么国家公园很重要？"
+            },
+            "options": {
+              "en": [
+                "Protect biodiversity",
+                "Increase tourism only",
+                "Sell wildlife"
+              ],
+              "ms": [
+                "Melindungi kepelbagaian biologi",
+                "Meningkatkan pelancongan sahaja",
+                "Menjual hidupan liar"
+              ],
+              "zh": [
+                "保护生物多样性",
+                "仅增加旅游",
+                "出售野生动物"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
           },
-          "correctIndex": 0
-        }
+          {
+            "question": {
+              "en": "Which TWO outcomes come from biodiversity protection?",
+              "ms": "Apakah DUA hasil daripada perlindungan biodiversiti?",
+              "zh": "生物多样性保护会带来哪两项结果？"
+            },
+            "options": {
+              "en": [
+                "Stronger ecosystems",
+                "Stable wildlife populations",
+                "More habitat destruction",
+                "Illegal wildlife trade"
+              ],
+              "ms": [
+                "Ekosistem lebih kukuh",
+                "Populasi hidupan liar stabil",
+                "Lebih banyak kemusnahan habitat",
+                "Perdagangan haram hidupan liar"
+              ],
+              "zh": [
+                "生态系统更稳健",
+                "野生动物种群更稳定",
+                "更多栖息地破坏",
+                "野生动物非法贸易"
+              ]
+            },
+            "correctIndexes": [
+              0,
+              1
+            ]
+          }
+        ]
       },
       {
         "id": "3.2",
@@ -337,31 +461,36 @@
           "ms": "Pemeliharaan habitat memastikan populasi hidupan liar kekal stabil.",
           "zh": "栖息地保护确保野生动物种群保持稳定。"
         },
-        "quiz": {
-          "question": {
-            "en": "What does habitat preservation protect?",
-            "ms": "Apakah yang dilindungi oleh pemeliharaan habitat?",
-            "zh": "栖息地保护保护什么？"
-          },
-          "options": {
-            "en": [
-              "Animal homes",
-              "Visitor buildings",
-              "Parking lots"
-            ],
-            "ms": [
-              "Rumah haiwan",
-              "Bangunan pelawat",
-              "Tempat letak kereta"
-            ],
-            "zh": [
-              "动物的家园",
-              "游客建筑",
-              "停车场"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What does habitat preservation protect?",
+              "ms": "Apakah yang dilindungi oleh pemeliharaan habitat?",
+              "zh": "栖息地保护保护什么？"
+            },
+            "options": {
+              "en": [
+                "Animal homes",
+                "Visitor buildings",
+                "Parking lots"
+              ],
+              "ms": [
+                "Rumah haiwan",
+                "Bangunan pelawat",
+                "Tempat letak kereta"
+              ],
+              "zh": [
+                "动物的家园",
+                "游客建筑",
+                "停车场"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       }
     ]
   },
@@ -395,31 +524,36 @@
           "ms": "Panduan harus memahami prosedur pertolongan cemas asas untuk keselamatan pengunjung.",
           "zh": "导游应了解基础急救程序以保障游客安全。"
         },
-        "quiz": {
-          "question": {
-            "en": "What should a guide do first in an emergency?",
-            "ms": "Apakah yang harus dilakukan oleh panduan terlebih dahulu dalam kecemasan?",
-            "zh": "导游在紧急情况下应首先做什么？"
-          },
-          "options": {
-            "en": [
-              "Assess the situation",
-              "Run away",
-              "Ignore it"
-            ],
-            "ms": [
-              "Menilai situasi",
-              "Lari",
-              "Mengabaikannya"
-            ],
-            "zh": [
-              "评估情况",
-              "逃跑",
-              "忽视它"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What should a guide do first in an emergency?",
+              "ms": "Apakah yang harus dilakukan oleh panduan terlebih dahulu dalam kecemasan?",
+              "zh": "导游在紧急情况下应首先做什么？"
+            },
+            "options": {
+              "en": [
+                "Assess the situation",
+                "Run away",
+                "Ignore it"
+              ],
+              "ms": [
+                "Menilai situasi",
+                "Lari",
+                "Mengabaikannya"
+              ],
+              "zh": [
+                "评估情况",
+                "逃跑",
+                "忽视它"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       },
       {
         "id": "4.2",
@@ -443,31 +577,36 @@
           "ms": "Panduan mesti mengetahui laluan pemindahan dan prosedur komunikasi kecemasan.",
           "zh": "导游必须了解疏散路线和紧急通信程序。"
         },
-        "quiz": {
-          "question": {
-            "en": "What is critical during evacuation?",
-            "ms": "Apakah yang kritikal semasa pemindahan?",
-            "zh": "疏散期间什么是关键？"
-          },
-          "options": {
-            "en": [
-              "Follow emergency routes",
-              "Walk randomly",
-              "Wait silently"
-            ],
-            "ms": [
-              "Ikut laluan kecemasan",
-              "Berjalan secara rawak",
-              "Menunggu dengan senyap"
-            ],
-            "zh": [
-              "遵循紧急路线",
-              "随意走动",
-              "静静等待"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What is critical during evacuation?",
+              "ms": "Apakah yang kritikal semasa pemindahan?",
+              "zh": "疏散期间什么是关键？"
+            },
+            "options": {
+              "en": [
+                "Follow emergency routes",
+                "Walk randomly",
+                "Wait silently"
+              ],
+              "ms": [
+                "Ikut laluan kecemasan",
+                "Berjalan secara rawak",
+                "Menunggu dengan senyap"
+              ],
+              "zh": [
+                "遵循紧急路线",
+                "随意走动",
+                "静静等待"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       }
     ]
   },
@@ -501,31 +640,36 @@
           "ms": "Panduan mempromosikan amalan pelancongan yang bertanggungjawab terhadap alam sekitar.",
           "zh": "导游促进环保责任旅游实践。"
         },
-        "quiz": {
-          "question": {
-            "en": "What does sustainable tourism protect?",
-            "ms": "Apakah yang dilindungi oleh pelancongan lestari?",
-            "zh": "可持续旅游保护什么？"
-          },
-          "options": {
-            "en": [
-              "Nature and culture",
-              "Only profits",
-              "Only tourists"
-            ],
-            "ms": [
-              "Alam dan budaya",
-              "Hanya keuntungan",
-              "Hanya pelancong"
-            ],
-            "zh": [
-              "自然和文化",
-              "仅利润",
-              "仅游客"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What does sustainable tourism protect?",
+              "ms": "Apakah yang dilindungi oleh pelancongan lestari?",
+              "zh": "可持续旅游保护什么？"
+            },
+            "options": {
+              "en": [
+                "Nature and culture",
+                "Only profits",
+                "Only tourists"
+              ],
+              "ms": [
+                "Alam dan budaya",
+                "Hanya keuntungan",
+                "Hanya pelancong"
+              ],
+              "zh": [
+                "自然和文化",
+                "仅利润",
+                "仅游客"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       },
       {
         "id": "5.2",
@@ -549,31 +693,36 @@
           "ms": "Pengurusan sisa yang betul memastikan taman negara bersih dan melindungi hidupan liar.",
           "zh": "适当的废物管理保持国家公园清洁并保护野生动物。"
         },
-        "quiz": {
-          "question": {
-            "en": "What helps reduce park pollution?",
-            "ms": "Apakah yang membantu mengurangkan pencemaran taman?",
-            "zh": "什么有助于减少公园污染？"
-          },
-          "options": {
-            "en": [
-              "Proper waste disposal",
-              "Throwing trash",
-              "Ignoring litter"
-            ],
-            "ms": [
-              "Pelupusan sisa yang betul",
-              "Membuang sampah",
-              "Mengabaikan sampah"
-            ],
-            "zh": [
-              "适当的废物处理",
-              "乱扔垃圾",
-              "忽视垃圾"
+        "quizzes": [
+          {
+            "question": {
+              "en": "What helps reduce park pollution?",
+              "ms": "Apakah yang membantu mengurangkan pencemaran taman?",
+              "zh": "什么有助于减少公园污染？"
+            },
+            "options": {
+              "en": [
+                "Proper waste disposal",
+                "Throwing trash",
+                "Ignoring litter"
+              ],
+              "ms": [
+                "Pelupusan sisa yang betul",
+                "Membuang sampah",
+                "Mengabaikan sampah"
+              ],
+              "zh": [
+                "适当的废物处理",
+                "乱扔垃圾",
+                "忽视垃圾"
+              ]
+            },
+            "correctIndex": 0,
+            "correctIndexes": [
+              0
             ]
-          },
-          "correctIndex": 0
-        }
+          }
+        ]
       }
     ]
   }

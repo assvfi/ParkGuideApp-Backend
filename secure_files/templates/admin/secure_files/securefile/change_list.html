@@ -1,0 +1,62 @@
+{% extends "admin/change_list.html" %}
+
+{% block content_title %}
+{{ block.super }}
+<div style="margin-top: 16px;">
+  <form id="drag-upload-form" method="post" action="{{ drag_upload_url }}" enctype="multipart/form-data" style="max-width: 760px;">
+    {% csrf_token %}
+    <div
+      id="drag-drop-zone"
+      style="border: 2px dashed #5b8def; border-radius: 10px; padding: 20px; text-align: center; background: #f7faff; cursor: pointer;"
+    >
+      <strong>Drag & drop files here</strong>
+      <div style="margin-top: 6px;">or click to choose files</div>
+      <input id="drag-file-input" type="file" name="files" multiple style="display: none;" />
+      <div id="drag-file-list" style="margin-top: 10px; font-size: 12px;"></div>
+    </div>
+    <div style="margin-top: 10px;">
+      <button type="submit" class="button default">Upload to Private S3</button>
+    </div>
+  </form>
+</div>
+<script>
+(function () {
+  const zone = document.getElementById('drag-drop-zone');
+  const input = document.getElementById('drag-file-input');
+  const list = document.getElementById('drag-file-list');
+
+  const renderFiles = (files) => {
+    if (!files || files.length === 0) {
+      list.textContent = '';
+      return;
+    }
+    const names = Array.from(files).map((f) => f.name).join(', ');
+    list.textContent = `Selected: ${names}`;
+  };
+
+  zone.addEventListener('click', () => input.click());
+
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.style.background = '#eaf2ff';
+  });
+
+  zone.addEventListener('dragleave', () => {
+    zone.style.background = '#f7faff';
+  });
+
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.style.background = '#f7faff';
+    if (!e.dataTransfer || !e.dataTransfer.files) return;
+
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach((file) => dt.items.add(file));
+    input.files = dt.files;
+    renderFiles(input.files);
+  });
+
+  input.addEventListener('change', () => renderFiles(input.files));
+})();
+</script>
+{% endblock %}
