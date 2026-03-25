@@ -1,10 +1,17 @@
 from django.core.management.base import BaseCommand
-from secure_files.services.s3 import ensure_bucket_exists
-
+# Change the import to your new Firebase service
+from secure_files.services.firebase_storage import storage 
 
 class Command(BaseCommand):
-    help = 'Create the configured private S3 bucket (if missing) and apply public access block settings.'
+    help = 'Verify connection to the configured Firebase Storage bucket.'
 
     def handle(self, *args, **options):
-        ensure_bucket_exists()
-        self.stdout.write(self.style.SUCCESS('Private S3 bucket is ready.'))
+        try:
+            # We try to get the bucket metadata to verify connection/permissions
+            bucket = storage.bucket()
+            if bucket.exists():
+                self.stdout.write(self.style.SUCCESS(f'Firebase bucket "{bucket.name}" is accessible.'))
+            else:
+                self.stdout.write(self.style.ERROR(f'Bucket "{bucket.name}" does not exist. Check your FIREBASE_STORAGE_BUCKET setting.'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'Failed to connect to Firebase: {e}'))

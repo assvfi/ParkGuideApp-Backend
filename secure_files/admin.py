@@ -3,7 +3,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 
-from .services.s3 import upload_file
+from .services.firebase_storage import upload_file
 from .models import SecureFile
 
 

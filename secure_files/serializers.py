@@ -11,7 +11,7 @@ class SecureFileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'owner', 'original_name', 'content_type', 'size', 'uploaded_at', 'download_url']
 
     def get_download_url(self, obj):
-        from .services.s3 import generate_download_url
+        from .services.firebase_storage import generate_download_url
         try:
             return generate_download_url(obj.s3_key)
         except Exception:

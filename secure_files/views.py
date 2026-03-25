@@ -7,7 +7,7 @@ from django.http import HttpResponse
 
 from .models import SecureFile
 from .serializers import SecureFileSerializer
-from .services.s3 import delete_file, download_file_bytes, generate_download_url, upload_file
+from .services.firebase_storage import delete_file, download_file_bytes, generate_download_url, upload_file
 
 
 class SecureFileViewSet(viewsets.ModelViewSet):

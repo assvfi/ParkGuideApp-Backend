@@ -184,85 +184,11 @@ All notification endpoints require `Authorization: Bearer <access_token>`.
 
 All secure-file endpoints require `Authorization: Bearer <access_token>`.
 
-## Private S3 Setup
+## Google FIrebase Usage
 
-Set environment variables before running server/commands:
-
-```bash
-export S3_ENABLED=true
-export S3_BUCKET_NAME=parkguide-private-files
-export S3_REGION_NAME=ap-southeast-1
-export AWS_ACCESS_KEY_ID=<your-access-key>
-export AWS_SECRET_ACCESS_KEY=<your-secret-key>
-
-# Optional (for MinIO/LocalStack or S3-compatible providers)
-export S3_ENDPOINT_URL=http://127.0.0.1:9000
-
-# Optional (seconds for presigned URL)
-export S3_PRESIGNED_URL_EXPIRY=300
-```
-
-Bootstrap bucket with private-access block:
-
+- Rquires api json file, requests from @MiyukiVigil
 ```bash
 python manage.py bootstrap_private_bucket
-```
-
-### Local Demo Setup (MinIO)
-
-If you want to demo S3 locally without AWS, use MinIO:
-
-```bash
-sudo docker run -d --name parkguide-minio \
-  -p 9000:9000 -p 9001:9001 \
-  -e MINIO_ROOT_USER=minioadmin \
-  -e MINIO_ROOT_PASSWORD=minioadmin \
-  minio/minio server /data --console-address ":9001"
-```
-
-If Docker says the container name already exists:
-
-```bash
-sudo docker start parkguide-minio
-# or recreate cleanly:
-sudo docker rm -f parkguide-minio
-```
-
-Use these environment values for MinIO:
-
-```bash
-export S3_ENABLED=true
-export S3_BUCKET_NAME=parkguide-private-files
-export S3_REGION_NAME=us-east-1
-export S3_ENDPOINT_URL=http://127.0.0.1:9000
-export AWS_ACCESS_KEY_ID=minioadmin
-export AWS_SECRET_ACCESS_KEY=minioadmin
-export S3_PRESIGNED_URL_EXPIRY=300
-```
-
-Then run:
-
-```bash
-python manage.py bootstrap_private_bucket
-python manage.py runserver
-adb reverse tcp:9000 tpc:9000
-```
-
-MinIO console URL:
-- `http://127.0.0.1:9001`
-
-### Quick Verification
-
-1. Login to get JWT via `/api/accounts/login/`.
-2. Upload a file to `/api/secure-files/files/` as multipart form field `file`.
-3. Confirm `download_url` is returned and works for a short time.
-
-### `POST /api/complete-module/` request body
-
-```json
-{
-  "module_id": 1
-}
 ```
 
 ### Example `course-progress` response row
