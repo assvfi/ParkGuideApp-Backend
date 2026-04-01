@@ -43,21 +43,73 @@
         }
 
         /* Layout */
-        .app-wrapper { display: flex; min-height: 100vh; }
-        
+        .app-wrapper { display: block; min-height: 100vh; }
+
         .sidebar {
-            width: var(--sidebar-width);
+            width: min(86vw, 320px);
             background: var(--bg-card);
             border-right: 1px solid var(--border);
-            padding: 2rem 1.25rem;
+            padding: 1.25rem 0.9rem;
             display: flex;
             flex-direction: column;
-            position: sticky;
+            position: fixed;
+            left: 0;
             top: 0;
-            height: 100vh;
+            height: 100dvh;
+            z-index: 100;
+            transform: translateX(-105%);
+            transition: transform 0.25s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
         }
 
         .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 90;
+        }
+
+        .mobile-menu-btn {
+            display: inline-flex;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+            flex: 0 0 40px;
+        }
+
+        .theme-toggle-btn i {
+            font-size: 1rem;
+            line-height: 1;
+            display: block;
+        }
 
         /* Sidebar Nav */
         .brand {
@@ -252,6 +304,12 @@
             border-color: #34413b;
         }
 
+        [data-theme="dark"] .theme-toggle-btn {
+            background-color: #1a221e;
+            color: #e6efea;
+            border-color: #34413b;
+        }
+
         [data-theme="dark"] .btn-light:hover,
         [data-theme="dark"] .btn-outline-secondary:hover,
         [data-theme="dark"] .page-link:hover {
@@ -263,6 +321,120 @@
         [data-theme="dark"] .text-muted {
             color: #a7b8b0 !important;
         }
+
+        .sidebar-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .top-bar {
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 80;
+        }
+
+        .top-bar h1 {
+            font-size: 1rem;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 50vw;
+        }
+
+        .main-content > div.p-4,
+        .main-content > div.p-lg-5 {
+            padding: 1rem !important;
+        }
+
+        .glass-card {
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 0.75rem;
+        }
+
+        @media (min-width: 1200px) {
+            .app-wrapper {
+                display: flex;
+            }
+
+            .sidebar {
+                width: var(--sidebar-width);
+                padding: 2rem 1.25rem;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .mobile-menu-btn {
+                display: none;
+            }
+
+            .top-bar {
+                padding: 1.25rem 2.5rem;
+            }
+
+            .top-bar h1 {
+                font-size: 1.5rem;
+                max-width: none;
+            }
+
+            .main-content > div.p-4,
+            .main-content > div.p-lg-5 {
+                padding: 3rem !important;
+            }
+
+            .glass-card {
+                border-radius: 24px;
+                padding: 1.5rem;
+            }
+
+            .sidebar-backdrop {
+                display: none;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .sidebar {
+                width: min(86vw, 320px);
+                padding: 1.25rem 0.9rem;
+            }
+
+            .brand {
+                margin-bottom: 1.5rem;
+            }
+
+            .nav-link {
+                padding: 10px 12px;
+                font-size: 0.93rem;
+            }
+
+            .top-bar {
+                padding: 0.75rem;
+            }
+
+            .top-bar .rounded-circle {
+                width: 34px !important;
+                height: 34px !important;
+            }
+
+            .theme-toggle-btn {
+                width: 34px;
+                height: 34px;
+                flex-basis: 34px;
+            }
+
+            .theme-toggle-btn i {
+                font-size: 0.95rem;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -271,7 +443,7 @@
         <aside class="sidebar">
             <a href="{% url 'dashboard:home' %}" class="brand">
                 <span class="brand-logo">
-                    <img src="{% static 'icon.png' %}" width="40" height="40" alt="SFC" onerror="this.style.display='none'">
+                    <img src="{% static 'images/icon.png' %}" width="40" height="40" alt="SFC" onerror="this.style.display='none'">
                 </span>
                 <span>SARAWAK<br>FORESTRY</span>
             </a>
@@ -309,12 +481,18 @@
                 </form>
             </div>
         </aside>
+        <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 
         <main class="main-content">
             <header class="top-bar">
-                <h1 class="h4 fw-bold mb-0">{% block page_title %}{% endblock %}</h1>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="mobile-menu-btn" type="button" onclick="toggleSidebar()" aria-label="Open menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="h4 fw-bold mb-0">{% block page_title %}{% endblock %}</h1>
+                </div>
                 <div class="d-flex align-items-center gap-3">
-                    <button class="btn btn-light rounded-circle" onclick="toggleTheme()" id="theme-btn">
+                    <button class="theme-toggle-btn" type="button" onclick="toggleTheme()" id="theme-btn" aria-label="Toggle theme">
                         <i class="bi bi-moon"></i>
                     </button>
                     <div class="d-flex align-items-center gap-2 ps-3 border-start">
@@ -363,6 +541,46 @@
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         updateThemeIcon(savedTheme);
+
+        const sidebarEl = document.querySelector('.sidebar');
+        const backdropEl = document.getElementById('sidebar-backdrop');
+
+        function openSidebar() {
+            if (!sidebarEl || !backdropEl) return;
+            sidebarEl.classList.add('open');
+            backdropEl.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            if (!sidebarEl || !backdropEl) return;
+            sidebarEl.classList.remove('open');
+            backdropEl.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function toggleSidebar() {
+            if (!sidebarEl) return;
+            if (sidebarEl.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1200) {
+                closeSidebar();
+            }
+        });
+
+        document.querySelectorAll('.sidebar .nav-link').forEach((link) => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1200) {
+                    closeSidebar();
+                }
+            });
+        });
     </script>
 </body>
 </html>
