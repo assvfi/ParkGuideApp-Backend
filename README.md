@@ -5,8 +5,9 @@ Django REST backend for the Park Guide App training module.
 ## Stack
 - Django + Django REST Framework
 - JWT authentication (SimpleJWT)
-- PostgreSQL
+- Neon PostgreSQL
 - Custom user model (`accounts.CustomUser`)
+- Firebase secure file storage
 
 ## Current Features
 - Course and module APIs
@@ -16,80 +17,14 @@ Django REST backend for the Park Guide App training module.
 
 ## Prerequisites
 - Python 3.10+
-- PostgreSQL running locally
-- A PostgreSQL database/user matching current settings in [park_guide/settings.py](park_guide/settings.py)
+- Project `.env` file from @MiyukiVigil
+- Secrets files/credentials from @MiyukiVigil
 
-Current DB config in settings:
-- DB name: `pga_db`
-- DB user: `admin`
-- DB password: `ADMIN`
-- Host: `localhost`
-- Port: `5432`
-
-## PostgreSQL Setup
-
-### Install PostgreSQL
-
-- Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-```
-
-- Arch/Manjaro:
-
-```bash
-sudo pacman -S postgresql
-sudo -u postgres initdb -D /var/lib/postgres/data
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-```
-
-- macOS (Homebrew):
-
-```bash
-brew install postgresql
-brew services start postgresql
-```
-
-- Windows:
-  - Install from https://www.postgresql.org/download/windows/
-  - Use default port `5432`
-
-### Create database and user
-
-Open PostgreSQL shell:
-
-For Linux:
-```bash
-sudo -u postgres psql
-```
-
-For Mac:
-```bash
-psql postgres
-```
-For Windows:
-```bash
-psql -U postgres
-```
-
-Run:
-
-```sql
-CREATE DATABASE pga_db;
-CREATE USER admin WITH PASSWORD 'ADMIN';
-GRANT ALL PRIVILEGES ON DATABASE pga_db TO admin;
-GRANT ALL ON SCHEMA public TO admin;
-```
-
-Exit:
-
-```sql
-\q
-```
+Current configuration is environment-driven (see `park_guide/settings.py`):
+- `DATABASE_URL` (Neon database URL)
+- `DB_SSL_REQUIRE` (optional)
+- `DB_CONN_MAX_AGE` (optional)
+- `DB_CONN_HEALTH_CHECKS` (optional)
 
 ## Setup
 1. Create and activate a virtual environment:
@@ -105,18 +40,17 @@ For Windows:
 venv\Scripts\activate
 ```
 
-2. Install core backend dependencies:
-
-```bash
-pip install django djangorestframework djangorestframework-simplejwt psycopg2-binary
-pip install boto3
-```
-
-3. (Optional) Install additional packages from `requirements.txt` if you use it in your environment:
+2. Install backend dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+3. Add required environment/secrets files provided by @MiyukiVigil:
+
+- `.env`
+- Firebase service account JSON (under `secrets/`)
+- Any additional project secrets used by your environment
 
 4. Run migrations:
 For first time setup
@@ -175,7 +109,7 @@ All course/progress endpoints require `Authorization: Bearer <access_token>`.
 
 All notification endpoints require `Authorization: Bearer <access_token>`.
 
-## Secure File Endpoints (Private S3)
+## Secure File Endpoints (Firebase Storage)
 - `GET /api/secure-files/files/` – list your uploaded files (admin sees all)
 - `POST /api/secure-files/files/` – upload file with multipart field `file`
 - `GET /api/secure-files/files/{id}/` – file metadata + temporary download URL
@@ -184,9 +118,9 @@ All notification endpoints require `Authorization: Bearer <access_token>`.
 
 All secure-file endpoints require `Authorization: Bearer <access_token>`.
 
-## Google FIrebase Usage
+## Firebase Setup
 
-- Rquires api json file, requests from @MiyukiVigil
+- Requires Firebase service account JSON file, request from @MiyukiVigil
 ```bash
 python manage.py bootstrap_private_bucket
 ```
@@ -246,6 +180,5 @@ Demo badge setup command:
 - Training JSON can use either `quiz` (single object, backward compatible) or `quizzes` (array of quiz objects).
 - Each quiz supports single-answer (`correctIndex`) and multi-answer (`correctIndexes`) with up to 3 correct choices.
 - Posting to progress endpoints reuses and amends existing progress records for the same user/course or user/module instead of creating new IDs.
-- This backend currently uses hardcoded DB credentials in settings (fine for class/dev use, not production).
-- The current `requirements.txt` appears to include many machine-specific packages; use the core dependency install command above as the minimum reliable setup.
-- Secure files are stored in a private S3 bucket and accessed only with valid app auth + short-lived presigned URLs.
+- Dependencies are maintained in `requirements.txt` and should stay project-focused only.
+- Secure files are stored in Firebase private storage and accessed only with valid app auth + short-lived signed URLs.
