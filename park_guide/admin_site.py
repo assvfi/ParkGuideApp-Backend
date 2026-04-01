@@ -29,6 +29,7 @@ class ParkGuideAdminSite(AdminSite):
 
     def each_context(self, request):
         context = super().each_context(request)
+        current_user = request.user if request.user.is_authenticated else None
 
         total_users = CustomUser.objects.count()
         active_learners = CustomUser.objects.filter(
@@ -58,7 +59,11 @@ class ParkGuideAdminSite(AdminSite):
         in_progress_courses = course_progress_qs.filter(progress__gt=0, completed=False).count()
         not_started_courses = course_progress_qs.filter(progress=0, completed=False).count()
         stalled_courses = course_progress_qs.filter(progress__gt=0, completed=False, updated_at__lt=fourteen_days_ago).count()
-        unread_admin_notifications = user_notifications_qs.filter(user=request.user, is_read=False).count()
+        unread_admin_notifications = (
+            user_notifications_qs.filter(user_id=current_user.id, is_read=False).count()
+            if current_user
+            else 0
+        )
         new_users_this_week = app_users_qs.filter(date_joined__gte=seven_days_ago).count()
 
         recent_notifications = Notification.objects.select_related("created_by")[:5]
@@ -219,7 +224,12 @@ class ParkGuideAdminSite(AdminSite):
                 "label": "Unread admin alerts",
                 "value": unread_admin_notifications,
                 "detail": "Notifications sent to your staff account",
-                "url": reverse("admin:notifications_usernotification_changelist") + f"?user__id__exact={request.user.id}&is_read__exact=0",
+                "url": reverse("admin:notifications_usernotification_changelist")
+                + (
+                    f"?user__id__exact={current_user.id}&is_read__exact=0"
+                    if current_user
+                    else "?is_read__exact=0"
+                ),
                 "tone": "blue",
             },
             {
