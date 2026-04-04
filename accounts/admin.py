@@ -16,6 +16,7 @@ class CustomUserAdmin(DashboardStatsChangeListMixin, UserAdmin):
     list_display = (
         'email',
         'username',
+        'user_type',
         'role_badge',
         'learner_activity',
         'course_completion_summary',
@@ -23,16 +24,16 @@ class CustomUserAdmin(DashboardStatsChangeListMixin, UserAdmin):
         'is_active',
         'last_login',
     )
-    list_filter = ('is_staff', 'is_active', 'is_superuser', 'date_joined', 'last_login')
+    list_filter = ('user_type', 'is_staff', 'is_active', 'is_superuser', 'date_joined', 'last_login')
     fieldsets = (
         (None, {'fields': ('email', 'username', 'password')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Permissions', {'fields': ('user_type', 'is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2', 'is_staff', 'is_active', 'is_superuser')}
+            'fields': ('email', 'username', 'user_type', 'password1', 'password2', 'is_staff', 'is_active', 'is_superuser')}
         ),
     )
     search_fields = ('email', 'username')
@@ -51,7 +52,7 @@ class CustomUserAdmin(DashboardStatsChangeListMixin, UserAdmin):
         )
 
     def role_badge(self, obj):
-        if obj.is_superuser:
+        if obj.user_type == CustomUser.USER_TYPE_ADMIN or obj.is_superuser:
             return self.render_status_pill('Superuser', 'gold')
         if obj.is_staff:
             return self.render_status_pill('Staff', 'blue')
@@ -59,7 +60,7 @@ class CustomUserAdmin(DashboardStatsChangeListMixin, UserAdmin):
     role_badge.short_description = 'Role'
 
     def learner_activity(self, obj):
-        if obj.is_staff or obj.is_superuser:
+        if obj.user_type == CustomUser.USER_TYPE_ADMIN or obj.is_staff or obj.is_superuser:
             return self.render_status_pill('Internal account', 'neutral')
         completed_modules = getattr(obj, 'completed_modules_count', 0)
         if completed_modules >= 8:
@@ -70,7 +71,7 @@ class CustomUserAdmin(DashboardStatsChangeListMixin, UserAdmin):
     learner_activity.short_description = 'Activity'
 
     def course_completion_summary(self, obj):
-        if obj.is_staff or obj.is_superuser:
+        if obj.user_type == CustomUser.USER_TYPE_ADMIN or obj.is_staff or obj.is_superuser:
             return format_html('<span class="admin-subtle">{}</span>', 'Not a learner account')
 
         total = getattr(obj, 'user_courses_total', None)
@@ -96,7 +97,7 @@ class CustomUserAdmin(DashboardStatsChangeListMixin, UserAdmin):
     badge_summary.short_description = 'Badges'
 
     def get_dashboard_stats(self, request, queryset):
-        learners = queryset.filter(is_staff=False, is_superuser=False)
+        learners = queryset.filter(user_type=CustomUser.USER_TYPE_LEARNER, is_staff=False, is_superuser=False)
         active = queryset.filter(is_active=True).count()
         completed_courses = CourseProgress.objects.filter(user__in=queryset, completed=True).count()
         granted_badges = UserBadge.objects.filter(user__in=queryset, status=UserBadge.STATUS_GRANTED).count()

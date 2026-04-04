@@ -5,3 +5,4 @@ dj-database-url==3.0.1
 python-dotenv==1.1.1
 psycopg2-binary==2.9.10
 firebase-admin==7.1.0
+reportlab==4.0.9

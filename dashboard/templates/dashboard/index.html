@@ -3,10 +3,119 @@
 {% block title %}Overview - SFC{% endblock %}
 {% block page_title %}System Overview{% endblock %}
 
+{% block extra_css %}
+<style>
+    .overview-row-compact {
+        --bs-gutter-x: 1rem;
+        --bs-gutter-y: 1rem;
+    }
+
+    .overview-stat-card {
+        padding: 1.1rem;
+    }
+
+    .recent-activity-scroll {
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 0.35rem;
+    }
+
+    .recent-activity-item {
+        margin-bottom: 0.85rem;
+    }
+
+    .recent-activity-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .quick-actions-panel {
+        background: linear-gradient(160deg, #2d6a4f, #1f5b42);
+        border: none;
+        color: #f7fff9;
+    }
+
+    [data-theme="dark"] .quick-actions-panel {
+        background: linear-gradient(160deg, #1a4f38, #133a2a);
+    }
+
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        padding: 0.8rem 0.95rem;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.95);
+        color: #1f4f39;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+    }
+
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        color: #16402f;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+    }
+
+    .quick-action-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 0;
+    }
+
+    .quick-action-left i {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(45, 106, 79, 0.12);
+        flex: 0 0 30px;
+    }
+
+    .quick-action-arrow {
+        color: #2d6a4f;
+        font-size: 0.95rem;
+    }
+
+    [data-theme="dark"] .quick-action-btn {
+        background: rgba(230, 244, 236, 0.95);
+        color: #123526;
+    }
+
+    [data-theme="dark"] .bg-light {
+        background-color: #323232 !important;
+        color: #e0e0e0;
+    }
+
+    [data-theme="dark"] .text-muted {
+        color: #a0a0a0 !important;
+    }
+
+    [data-theme="dark"] .border-bottom {
+        border-bottom-color: #404040 !important;
+    }
+
+    [data-theme="dark"] .recent-activity-scroll {
+        color: #e0e0e0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row g-4 mb-5">
+<div class="row overview-row-compact mb-4">
     <div class="col-xl-3 col-sm-6">
-        <div class="glass-card">
+        <div class="glass-card overview-stat-card">
             <div class="stat-icon bg-primary text-white"><i class="bi bi-people"></i></div>
             <div class="text-muted small fw-bold">TOTAL USERS</div>
             <div class="h2 fw-800 mb-0">{{ stats.total_users }}</div>
@@ -14,7 +123,7 @@
         </div>
     </div>
     <div class="col-xl-3 col-sm-6">
-        <div class="glass-card">
+        <div class="glass-card overview-stat-card">
             <div class="stat-icon bg-info text-white"><i class="bi bi-journal-bookmark"></i></div>
             <div class="text-muted small fw-bold">COURSES</div>
             <div class="h2 fw-800 mb-0">{{ course_stats.total_courses }}</div>
@@ -22,7 +131,7 @@
         </div>
     </div>
     <div class="col-xl-3 col-sm-6">
-        <div class="glass-card">
+        <div class="glass-card overview-stat-card">
             <div class="stat-icon bg-warning text-white"><i class="bi bi-clock-history"></i></div>
             <div class="text-muted small fw-bold">PENDING BADGES</div>
             <div class="h2 fw-800 mb-0 text-warning">{{ badge_stats.pending_approvals }}</div>
@@ -30,7 +139,7 @@
         </div>
     </div>
     <div class="col-xl-3 col-sm-6">
-        <div class="glass-card">
+        <div class="glass-card overview-stat-card">
             <div class="stat-icon bg-success text-white"><i class="bi bi-percent"></i></div>
             <div class="text-muted small fw-bold">AVG PROGRESS</div>
             <div class="h2 fw-800 mb-0">{{ course_stats.avg_progress|floatformat:0 }}%</div>
@@ -39,16 +148,106 @@
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row overview-row-compact mb-4">
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-server text-info me-2"></i>System Backups</h5>
+                <a href="{% url 'dashboard:backups' %}" class="btn btn-sm btn-outline-primary">Manage</a>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="glass-card p-3">
+                        <div class="text-muted small fw-bold mb-1">Auto-Backups</div>
+                        <div class="h4 fw-800 mb-2 {% if backup_summary.auto_backup_enabled %}text-success{% else %}text-warning{% endif %}">
+                            {% if backup_summary.auto_backup_enabled %}<i class="bi bi-check-circle"></i> Enabled{% else %}<i class="bi bi-exclamation-circle"></i> Disabled{% endif %}
+                        </div>
+                        {% if backup_summary.next_backup_at %}
+                        <div class="small text-muted">Next: {{ backup_summary.next_backup_at|date:"Y-m-d H:i" }}</div>
+                        {% else %}
+                        <div class="small text-muted">Not scheduled</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-3">
+                        <div class="text-muted small fw-bold mb-1">Last Backup</div>
+                        <div class="h4 fw-800 mb-2 {% if backup_summary.last_backup_status == 'success' %}text-success{% else %}text-danger{% endif %}">
+                            {% if backup_summary.last_backup_at %}
+                                {% if backup_summary.last_backup_status == 'success' %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-x-circle"></i>{% endif %} {{ backup_summary.last_backup_at|timesince }} ago
+                            {% else %}
+                                <span class="text-muted small">Never</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-3">
+                        <div class="text-muted small fw-bold mb-1">Firebase Backups</div>
+                        <div class="h4 fw-800 mb-2 text-info">{{ backup_summary.firebase_backup_count }}<span class="small text-muted ms-1">files</span></div>
+                        <div class="small text-muted">Max: {{ backup_summary.retention_count }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-3">
+                        <div class="text-muted small fw-bold mb-1">Backup Status</div>
+                        <div class="mb-2">
+                            <span class="badge bg-success me-2">{{ backup_summary.successful_backups }} Success</span>
+                            <span class="badge bg-danger">{{ backup_summary.failed_backups }} Failed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up text-success me-2"></i>Backup Quick Stats</h5>
+            <ul class="list-unstyled small">
+                <li class="mb-2 pb-2 border-bottom">
+                    <span class="text-muted">Total Logged:</span>
+                    <span class="fw-bold float-end">{{ backup_summary.total_backups_logged }}</span>
+                </li>
+                <li class="mb-2 pb-2 border-bottom">
+                    <span class="text-muted">Success Rate:</span>
+                    <span class="fw-bold float-end">
+                        {% if backup_summary.total_backups_logged > 0 %}
+                            {% widthratio backup_summary.successful_backups backup_summary.total_backups_logged 100 %}%
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
+                </li>
+                <li class="mb-2 pb-2 border-bottom">
+                    <span class="text-muted">System Status:</span>
+                    <span class="fw-bold float-end">
+                        {% if backup_summary.last_backup_status == 'success' %}
+                            <span class="badge bg-success">Healthy</span>
+                        {% elif backup_summary.last_backup_status == 'failed' %}
+                            <span class="badge bg-danger">Failed</span>
+                        {% else %}
+                            <span class="badge bg-warning">Unknown</span>
+                        {% endif %}
+                    </span>
+                </li>
+                <li class="mt-3 pt-2">
+                    <div class="text-muted small">Last checked: <strong>{{ backup_summary.last_backup_at|date:"Y-m-d H:i" }}</strong></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="row overview-row-compact">
     <div class="col-lg-8">
         <div class="glass-card h-100">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="h5 fw-bold mb-0">Recent Activity</h3>
                 <a href="#" class="btn btn-sm btn-light">View All</a>
             </div>
-            <div class="timeline">
+            <div class="timeline recent-activity-scroll">
                 {% for activity in recent_activity %}
-                <div class="d-flex gap-3 mb-4">
+                <div class="d-flex gap-3 recent-activity-item">
                     <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; flex-shrink: 0;">
                         <i class="bi bi-lightning-charge text-primary"></i>
                     </div>
@@ -57,25 +256,54 @@
                         <div class="text-muted small">{{ activity.timestamp|timesince }} ago</div>
                     </div>
                 </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                    <div class="small mt-2">No recent activity</div>
+                </div>
                 {% endfor %}
             </div>
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="glass-card h-100 bg-primary text-white">
-            <h3 class="h5 fw-bold mb-3">Quick Actions</h3>
-            <div class="d-grid gap-2">
-                <a href="{% url 'dashboard:badges' %}" class="btn btn-light text-start py-3">
-                    <i class="bi bi-shield-check me-2"></i> Review Badge Requests
+        <div class="glass-card h-100 quick-actions-panel">
+            <h3 class="h5 fw-bold mb-2">Quick Actions</h3>
+            <p class="small mb-3 opacity-75">Shortcuts for frequent admin tasks.</p>
+            <div class="quick-actions-grid">
+                <a href="{% url 'dashboard:badges' %}" class="quick-action-btn">
+                    <span class="quick-action-left">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Review Badge Requests</span>
+                    </span>
+                    <span class="quick-action-arrow"><i class="bi bi-arrow-right"></i></span>
                 </a>
-                <a href="{% url 'dashboard:notifications' %}" class="btn btn-light text-start py-3">
-                    <i class="bi bi-megaphone me-2"></i> Send System Alert
+                <a href="{% url 'dashboard:notifications' %}" class="quick-action-btn">
+                    <span class="quick-action-left">
+                        <i class="bi bi-megaphone"></i>
+                        <span>Send System Alert</span>
+                    </span>
+                    <span class="quick-action-arrow"><i class="bi bi-arrow-right"></i></span>
                 </a>
-                <a href="{% url 'dashboard:users' %}" class="btn btn-light text-start py-3">
-                    <i class="bi bi-person-plus me-2"></i> Manage User Accounts
+                <a href="{% url 'dashboard:users' %}" class="quick-action-btn">
+                    <span class="quick-action-left">
+                        <i class="bi bi-person-plus"></i>
+                        <span>Manage User Accounts</span>
+                    </span>
+                    <span class="quick-action-arrow"><i class="bi bi-arrow-right"></i></span>
                 </a>
-                <a href="{% url 'dashboard:secure_files' %}" class="btn btn-light text-start py-3">
-                    <i class="bi bi-cloud-upload me-2"></i> Upload Secure Files
+                <a href="{% url 'dashboard:secure_files' %}" class="quick-action-btn">
+                    <span class="quick-action-left">
+                        <i class="bi bi-cloud-upload"></i>
+                        <span>Upload Secure Files</span>
+                    </span>
+                    <span class="quick-action-arrow"><i class="bi bi-arrow-right"></i></span>
+                </a>
+                <a href="{% url 'dashboard:backups' %}" class="quick-action-btn">
+                    <span class="quick-action-left">
+                        <i class="bi bi-database"></i>
+                        <span>Backup / Restore Data</span>
+                    </span>
+                    <span class="quick-action-arrow"><i class="bi bi-arrow-right"></i></span>
                 </a>
             </div>
         </div>

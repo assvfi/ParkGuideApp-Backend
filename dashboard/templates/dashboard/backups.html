@@ -1,0 +1,314 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Backups - Dashboard{% endblock %}
+{% block page_title %}<i class="bi bi-database-fill me-2"></i>Data Backups{% endblock %}
+
+{% block extra_css %}
+<style>
+    [data-theme="dark"] .table {
+        color: #e0e0e0;
+        border-color: #404040;
+    }
+    [data-theme="dark"] .table-light {
+        background-color: #323232;
+        color: #e0e0e0;
+    }
+    [data-theme="dark"] .table tbody tr {
+        border-color: #404040;
+    }
+    [data-theme="dark"] .table tbody tr:hover {
+        background-color: #3a3a3a;
+    }
+    [data-theme="dark"] .table td {
+        border-color: #404040;
+    }
+    [data-theme="dark"] .table thead th {
+        border-color: #404040;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h5 class="fw-bold mb-3">Export Database Backup</h5>
+            <p class="text-muted mb-4">
+                Download a full JSON backup of database records (including accounts and secure file metadata such as Firebase paths).
+            </p>
+            <form method="post" data-no-loader>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="export_json">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-download me-2"></i>Download JSON Backup
+                </button>
+            </form>
+            <div class="small text-muted mt-3">
+                This does not include binary file contents from Firebase Storage.
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="glass-card h-100">
+            <h5 class="fw-bold mb-3">Backup To Firebase Now</h5>
+            <p class="text-muted mb-3">
+                Generate a JSON backup now and upload it into your Firebase bucket.
+            </p>
+            <form method="post" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="backup_to_firebase_now">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-cloud-arrow-up me-2"></i>Run Firebase Backup Now
+                </button>
+            </form>
+            {% if backup_setting.last_backup_blob_path %}
+                <div class="small text-muted">Last Firebase backup path:</div>
+                <div class="small fw-semibold" style="word-break: break-all;">{{ backup_setting.last_backup_blob_path }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-3">Auto Backup Settings</h5>
+            <p class="text-muted mb-3">
+                Configure automatic JSON backups to Firebase. Run the scheduler command below on a cron job.
+            </p>
+            <form method="post" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save_backup_settings">
+
+                <div class="col-md-2">
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="auto_backup_enabled" id="autoBackupEnabled" {% if backup_setting.auto_backup_enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="autoBackupEnabled">Enable Auto</label>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Frequency</label>
+                    <select name="backup_frequency" class="form-select">
+                        <option value="hourly" {% if backup_setting.backup_frequency == 'hourly' %}selected{% endif %}>Hourly</option>
+                        <option value="daily" {% if backup_setting.backup_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                        <option value="weekly" {% if backup_setting.backup_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Firebase Folder</label>
+                    <input type="text" name="firebase_backup_prefix" class="form-control" value="{{ backup_setting.firebase_backup_prefix }}" placeholder="system_backups">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Retention</label>
+                    <input type="number" name="firebase_retention_count" class="form-control" value="{{ backup_setting.firebase_retention_count }}" min="1" max="100">
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100">Save Settings</button>
+                </div>
+            </form>
+
+            <hr>
+
+            <div class="small text-muted mb-2">Run this scheduler command periodically (example: every 10 minutes via cron):</div>
+            <pre class="mb-0 p-3 rounded-3 bg-body-tertiary"><code>python manage.py run_scheduled_backups</code></pre>
+
+            <div class="row g-3 mt-1 small">
+                <div class="col-md-6">
+                    <div class="text-muted">Last backup time</div>
+                    <div class="fw-semibold">{{ backup_setting.last_backup_at|default:"Not yet" }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted">Next scheduled backup</div>
+                    <div class="fw-semibold">{{ backup_setting.next_backup_at|default:"Not scheduled" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-3">Dry-Run Validation</h5>
+            <p class="text-muted mb-3">
+                Test restore without writing  to database. Validates backup structure and content.
+            </p>
+            <form method="post" enctype="multipart/form-data" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="restore_json_dry_run">
+                <div class="mb-3">
+                    <label class="form-label">Backup File (.json)</label>
+                    <input type="file" name="backup_file" accept=".json,application/json" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-eye me-2"></i>Test Backup
+                </button>
+            </form>
+            {% if dry_run_summary %}
+            <div class="alert alert-info py-2">
+                <div class="fw-bold mb-2">Dry-Run Results:</div>
+                <small>
+                    <strong>Total Records:</strong> {{ dry_run_summary.total_records }}<br>
+                    <strong>Model Types:</strong> {{ dry_run_summary.total_models }}<br>
+                    <strong>Status:</strong> <span class="badge bg-success">Valid</span>
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-3">Firebase Coverage Report</h5>
+            <p class="text-muted mb-3">
+                Verify that all database file references exist in Firebase Storage.
+            </p>
+            <form method="post" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="run_firebase_coverage_report">
+                <button type="submit" class="btn btn-outline-warning w-100">
+                    <i class="bi bi-search me-2"></i>Run Report
+                </button>
+            </form>
+            {% if coverage_report %}
+            <div class="alert alert-warning py-2">
+                <div class="fw-bold mb-2">Coverage Report:</div>
+                <small>
+                    <strong>DB Files:</strong> {{ coverage_report.total_db_files }}<br>
+                    <strong>Matched:</strong> {{ coverage_report.matched_files }}<br>
+                    <strong>Missing:</strong> {{ coverage_report.missing_files }}
+                    {% if coverage_report.missing_examples %}
+                    <div class="mt-2">
+                        <strong class="d-block mb-1">Examples of missing files:</strong>
+                        {% for missing in coverage_report.missing_examples|slice:":3" %}
+                            <code class="text-danger small d-block">{{ missing|truncatechars:50 }}</code>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-3">Restore From Backup</h5>
+            <p class="text-muted mb-3">
+                Upload a previously exported JSON backup file to restore records.
+            </p>
+            <div class="alert alert-warning py-2" role="alert">
+                <strong>Important:</strong> Restore may fail if existing records conflict with the uploaded data.
+            </div>
+            <form method="post" enctype="multipart/form-data" class="mt-3" data-no-loader>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="restore_json">
+                <div class="mb-3">
+                    <label class="form-label">Backup File (.json)</label>
+                    <input type="file" name="backup_file" accept=".json,application/json" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Restore backup now? This may overwrite/conflict with existing records.');">
+                    <i class="bi bi-upload me-2"></i>Restore Backup
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Backup History</h5>
+                <div>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="export_history_pdf">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Export as PDF">
+                            <i class="bi bi-file-pdf me-1"></i>PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Destination</th>
+                            <th>Size</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for history in backup_history %}
+                        <tr>
+                            <td class="small">{{ history.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="small">{{ history.get_action_type_display }}</td>
+                            <td class="small">
+                                {% if history.status == 'success' %}
+                                    <span class="badge bg-success">✓ Success</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗ Failed</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">{{ history.destination|default:history.blob_path|truncatechars:25 }}</td>
+                            <td class="small">{% if history.file_size_bytes %}{{ history.file_size_bytes|filesizeformat }}{% else %}N/A{% endif %}</td>
+                            <td class="small">{{ history.triggered_by.username|default:"System" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No backup history yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Admin Audit Trail</h5>
+                <div>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="export_audit_pdf">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Export as PDF">
+                            <i class="bi bi-file-pdf me-1"></i>PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in backup_audit_logs %}
+                        <tr>
+                            <td class="small">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="small">{{ log.user.username|default:"Unknown" }}</td>
+                            <td class="small fw-semibold">{{ log.action }}</td>
+                            <td class="small text-muted">{{ log.metadata|truncatechars:50 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No audit log entries</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

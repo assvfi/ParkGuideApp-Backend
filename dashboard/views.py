@@ -1,18 +1,33 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management import call_command
 from datetime import timedelta
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils.timesince import timesince
+from io import StringIO, BytesIO
+import tempfile
+import os
+import json
+from firebase_admin import storage
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import AccessToken
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib import colors
+from datetime import datetime
 
 from accounts.models import CustomUser
 from courses.models import Course, Module, ModuleProgress, CourseProgress
@@ -20,6 +35,173 @@ from user_progress.models import Badge, UserBadge
 from notifications.models import Notification, UserNotification
 from secure_files.models import SecureFile
 from secure_files.services.firebase_storage import delete_file as delete_secure_blob, upload_file
+from .models import BackupSetting, BackupHistory, BackupAuditLog
+
+
+@require_http_methods(["GET"])
+def dashboard_sso_login(request):
+    """Create a Django session from a valid admin JWT token for the web dashboard."""
+    token = request.GET.get('token', '').strip()
+    if not token:
+        return redirect('dashboard:login')
+
+    try:
+        access_token = AccessToken(token)
+        user_id = access_token.get('user_id')
+        user = CustomUser.objects.get(id=user_id)
+    except (TokenError, CustomUser.DoesNotExist, TypeError, ValueError):
+        return redirect('dashboard:login')
+
+    if not (user.is_staff or user.is_superuser or getattr(user, 'user_type', '') == 'admin'):
+        return redirect('dashboard:login')
+
+    auth_login(request, user)
+    return redirect('dashboard:home')
+
+
+def build_backup_json():
+    """Build a JSON dump of database content for backup/export."""
+    buffer = StringIO()
+    call_command(
+        'dumpdata',
+        natural_foreign=True,
+        natural_primary=True,
+        indent=2,
+        stdout=buffer,
+    )
+    return buffer.getvalue()
+
+
+def get_or_create_backup_setting():
+    setting, _ = BackupSetting.objects.get_or_create(pk=1)
+    return setting
+
+
+def compute_next_backup_time(base_time, frequency):
+    if frequency == BackupSetting.FREQUENCY_HOURLY:
+        return base_time + timedelta(hours=1)
+    if frequency == BackupSetting.FREQUENCY_WEEKLY:
+        return base_time + timedelta(days=7)
+    return base_time + timedelta(days=1)
+
+
+def upload_backup_json_to_firebase(content, prefix='system_backups'):
+    now = timezone.now()
+    safe_prefix = (prefix or 'system_backups').strip('/')
+    filename = f'backup_{now.strftime("%Y%m%d_%H%M%S")}.json'
+    blob_path = f'{safe_prefix}/{filename}'
+    bucket = storage.bucket()
+    blob = bucket.blob(blob_path)
+    blob.upload_from_string(content, content_type='application/json')
+    return blob_path
+
+
+def validate_backup_json_content(content):
+    """Validate backup JSON structure and return summary information."""
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError as exc:
+        return False, f'Invalid JSON: {exc}', {}
+
+    if not isinstance(payload, list):
+        return False, 'Backup JSON must be a list of objects.', {}
+
+    model_counts = {}
+    for item in payload:
+        if not isinstance(item, dict):
+            return False, 'Backup contains invalid entries (expected objects).', {}
+        model_name = item.get('model')
+        if not model_name:
+            return False, 'Backup entries missing model field.', {}
+        model_counts[model_name] = model_counts.get(model_name, 0) + 1
+
+    summary = {
+        'total_records': len(payload),
+        'total_models': len(model_counts),
+        'model_counts': model_counts,
+    }
+    return True, '', summary
+
+
+def summarize_backup_json_file(file_path):
+    with open(file_path, 'r', encoding='utf-8') as backup_file:
+        content = backup_file.read()
+    return validate_backup_json_content(content)
+
+
+def log_backup_history(*, request_user, action_type, status, destination='', blob_path='', file_size_bytes=0, integrity_ok=False, details=''):
+    BackupHistory.objects.create(
+        triggered_by=request_user,
+        action_type=action_type,
+        status=status,
+        destination=destination,
+        blob_path=blob_path,
+        file_size_bytes=file_size_bytes,
+        integrity_ok=integrity_ok,
+        details=details,
+    )
+
+
+def log_backup_audit(*, request_user, action, metadata=''):
+    BackupAuditLog.objects.create(
+        user=request_user,
+        action=action,
+        metadata=metadata,
+    )
+
+
+def apply_firebase_backup_retention(prefix, keep_count):
+    """Delete old backup files beyond retention count for given prefix."""
+    if keep_count <= 0:
+        return []
+
+    safe_prefix = (prefix or 'system_backups').strip('/') + '/'
+    bucket = storage.bucket()
+    blobs = [blob for blob in bucket.list_blobs(prefix=safe_prefix) if blob.name.endswith('.json')]
+    blobs.sort(key=lambda blob: blob.updated or timezone.now(), reverse=True)
+
+    deleted = []
+    for blob in blobs[keep_count:]:
+        deleted.append(blob.name)
+        blob.delete()
+
+    return deleted
+
+
+def generate_firebase_coverage_report():
+    """Compare secure file paths in DB against objects present in Firebase."""
+    keys = list(SecureFile.objects.values_list('s3_key', flat=True))
+    if not keys:
+        return {
+            'total_db_files': 0,
+            'matched_files': 0,
+            'missing_files': 0,
+            'missing_examples': [],
+        }
+
+    bucket = storage.bucket()
+    existing = set()
+    for key in keys:
+        blob = bucket.blob(key)
+        if blob.exists():
+            existing.add(key)
+
+    missing = [key for key in keys if key not in existing]
+    return {
+        'total_db_files': len(keys),
+        'matched_files': len(existing),
+        'missing_files': len(missing),
+        'missing_examples': missing[:20],
+    }
+
+
+def pretty_bytes(num):
+    size = float(num)
+    units = ['B', 'KB', 'MB', 'GB']
+    for unit in units:
+        if size < 1024 or unit == units[-1]:
+            return f'{size:.2f} {unit}'
+        size /= 1024
 
 def normalize_progress_value(value):
     """Normalize progress values that may be stored as 0..1 ratios or 0..100 percentages."""
@@ -29,6 +211,146 @@ def normalize_progress_value(value):
     if 0 <= progress_value <= 1:
         progress_value *= 100
     return max(0.0, min(100.0, progress_value))
+
+def get_backup_summary():
+    """Get backup system summary/status."""
+    setting = get_or_create_backup_setting()
+    latest_history = BackupHistory.objects.order_by('-created_at').first()
+    
+    # Count backups in Firebase
+    firebase_count = 0
+    try:
+        safe_prefix = (setting.firebase_backup_prefix or 'system_backups').strip('/') + '/'
+        bucket = storage.bucket()
+        blobs = [blob for blob in bucket.list_blobs(prefix=safe_prefix) if blob.name.endswith('.json')]
+        firebase_count = len(blobs)
+    except Exception:
+        firebase_count = 0
+    
+    total_history = BackupHistory.objects.count()
+    successful = BackupHistory.objects.filter(status='success').count()
+    failed = BackupHistory.objects.filter(status='failed').count()
+    
+    return {
+        'auto_backup_enabled': setting.auto_backup_enabled,
+        'last_backup_at': latest_history.created_at if latest_history else None,
+        'last_backup_status': latest_history.status if latest_history else 'none',
+        'last_backup_destination': latest_history.destination if latest_history else '',
+        'firebase_backup_count': firebase_count,
+        'total_backups_logged': total_history,
+        'successful_backups': successful,
+        'failed_backups': failed,
+        'next_backup_at': setting.next_backup_at,
+        'retention_count': setting.firebase_retention_count,
+    }
+
+def generate_pdf_backup_history():
+    """Generate PDF report of backup history."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#2d6a4f'),
+        spaceAfter=12,
+        alignment=1
+    )
+    story.append(Paragraph('Backup History Report', title_style))
+    story.append(Paragraph(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', styles['Normal']))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Get backup history (last 50 records)
+    history = BackupHistory.objects.order_by('-created_at')[:50]
+    
+    # Create table data
+    data = [['Date & Time', 'Action', 'Status', 'Destination', 'Size', 'User']]
+    for h in history:
+        status_text = '✓ Success' if h.status == 'success' else '✗ Failed'
+        size_text = pretty_bytes(h.file_size_bytes) if h.file_size_bytes else 'N/A'
+        data.append([
+            h.created_at.strftime('%Y-%m-%d\n%H:%M:%S'),
+            h.get_action_type_display(),
+            status_text,
+            h.destination or h.blob_path[-20:] if h.blob_path else 'N/A',
+            size_text,
+            h.triggered_by.username if h.triggered_by else 'System',
+        ])
+    
+    # Create and style table
+    table = Table(data, colWidths=[1.2*inch, 1*inch, 0.8*inch, 1.2*inch, 0.8*inch, 1*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2d6a4f')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f8f5')]),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+    ]))
+    story.append(table)
+    
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+def generate_pdf_audit_trail():
+    """Generate PDF report of backup audit trail."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#2d6a4f'),
+        spaceAfter=12,
+        alignment=1
+    )
+    story.append(Paragraph('Backup Audit Trail Report', title_style))
+    story.append(Paragraph(f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', styles['Normal']))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Get audit trail (last 100 records)
+    audit = BackupAuditLog.objects.order_by('-created_at')[:100]
+    
+    # Create table data
+    data = [['Date & Time', 'User', 'Action', 'Metadata']]
+    for log in audit:
+        data.append([
+            log.created_at.strftime('%Y-%m-%d\n%H:%M:%S'),
+            log.user.username if log.user else 'Unknown',
+            log.action if log.action else 'N/A',
+            (log.metadata[:30] + '...') if len(log.metadata or '') > 30 else log.metadata or '',
+        ])
+    
+    # Create and style table
+    table = Table(data, colWidths=[1.3*inch, 1.2*inch, 1.5*inch, 1.3*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#d9494a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#fef0f0')]),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+    ]))
+    story.append(table)
+    
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
 
 def is_staff_or_admin(user):
     """Check if user is staff or admin"""
@@ -760,6 +1082,345 @@ def dashboard_secure_files(request):
     }
     return render(request, 'dashboard/secure_files.html', context)
 
+
+@login_required
+@user_passes_test(is_staff_or_admin)
+def dashboard_backups(request):
+    """Create and restore JSON database backups from dashboard."""
+    setting = get_or_create_backup_setting()
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '').strip()
+
+        if action == 'export_json':
+            try:
+                content = build_backup_json()
+                integrity_ok, integrity_error, summary = validate_backup_json_content(content)
+                if not integrity_ok:
+                    log_backup_history(
+                        request_user=request.user,
+                        action_type=BackupHistory.TYPE_EXPORT_LOCAL,
+                        status=BackupHistory.STATUS_FAILED,
+                        destination='local',
+                        integrity_ok=False,
+                        details=integrity_error,
+                    )
+                    messages.error(request, f'Backup export failed integrity check: {integrity_error}')
+                    return redirect('dashboard:backups')
+
+                timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                filename = f'parkguide_backup_{timestamp}.json'
+                size_bytes = len(content.encode('utf-8'))
+                detail_text = f"Records: {summary.get('total_records', 0)}, Models: {summary.get('total_models', 0)}"
+
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_EXPORT_LOCAL,
+                    status=BackupHistory.STATUS_SUCCESS,
+                    destination='local',
+                    file_size_bytes=size_bytes,
+                    integrity_ok=True,
+                    details=detail_text,
+                )
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Export local backup',
+                    metadata=detail_text,
+                )
+
+                response = HttpResponse(content, content_type='application/json')
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                return response
+            except Exception as exc:
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_EXPORT_LOCAL,
+                    status=BackupHistory.STATUS_FAILED,
+                    destination='local',
+                    integrity_ok=False,
+                    details=str(exc),
+                )
+                messages.error(request, f'Export failed: {exc}')
+                return redirect('dashboard:backups')
+
+        if action == 'backup_to_firebase_now':
+            try:
+                content = build_backup_json()
+                integrity_ok, integrity_error, summary = validate_backup_json_content(content)
+                if not integrity_ok:
+                    raise ValueError(integrity_error)
+
+                blob_path = upload_backup_json_to_firebase(content, setting.firebase_backup_prefix)
+                removed_paths = apply_firebase_backup_retention(setting.firebase_backup_prefix, setting.firebase_retention_count)
+                now = timezone.now()
+                setting.last_backup_at = now
+                setting.last_backup_blob_path = blob_path
+                if setting.auto_backup_enabled:
+                    setting.next_backup_at = compute_next_backup_time(now, setting.backup_frequency)
+                setting.save(update_fields=['last_backup_at', 'last_backup_blob_path', 'next_backup_at', 'updated_at'])
+
+                detail_text = (
+                    f"Records: {summary.get('total_records', 0)}, "
+                    f"Models: {summary.get('total_models', 0)}, "
+                    f"Retention removed: {len(removed_paths)}"
+                )
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_BACKUP_FIREBASE,
+                    status=BackupHistory.STATUS_SUCCESS,
+                    destination='firebase',
+                    blob_path=blob_path,
+                    file_size_bytes=len(content.encode('utf-8')),
+                    integrity_ok=True,
+                    details=detail_text,
+                )
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Backup to Firebase now',
+                    metadata=f'{blob_path} | {detail_text}',
+                )
+
+                messages.success(request, f'Backup uploaded to Firebase: {blob_path}')
+            except Exception as exc:
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_BACKUP_FIREBASE,
+                    status=BackupHistory.STATUS_FAILED,
+                    destination='firebase',
+                    integrity_ok=False,
+                    details=str(exc),
+                )
+                messages.error(request, f'Firebase backup failed: {exc}')
+            return redirect('dashboard:backups')
+
+        if action == 'save_backup_settings':
+            auto_enabled = request.POST.get('auto_backup_enabled') == 'on'
+            frequency = request.POST.get('backup_frequency', BackupSetting.FREQUENCY_DAILY)
+            prefix = request.POST.get('firebase_backup_prefix', '').strip() or 'system_backups'
+            retention_count_raw = request.POST.get('firebase_retention_count', '30').strip()
+
+            valid_frequencies = {choice[0] for choice in BackupSetting.FREQUENCY_CHOICES}
+            if frequency not in valid_frequencies:
+                frequency = BackupSetting.FREQUENCY_DAILY
+
+            setting.auto_backup_enabled = auto_enabled
+            setting.backup_frequency = frequency
+            setting.firebase_backup_prefix = prefix
+            try:
+                retention_count = int(retention_count_raw)
+            except ValueError:
+                retention_count = 30
+            setting.firebase_retention_count = max(1, min(retention_count, 1000))
+
+            now = timezone.now()
+            if auto_enabled:
+                baseline = setting.last_backup_at or now
+                setting.next_backup_at = compute_next_backup_time(baseline, frequency)
+            else:
+                setting.next_backup_at = None
+
+            setting.save()
+            log_backup_audit(
+                request_user=request.user,
+                action='Update backup settings',
+                metadata=(
+                    f'auto={setting.auto_backup_enabled}, '
+                    f'frequency={setting.backup_frequency}, '
+                    f'prefix={setting.firebase_backup_prefix}, '
+                    f'retention={setting.firebase_retention_count}'
+                ),
+            )
+            messages.success(request, 'Backup settings saved.')
+            return redirect('dashboard:backups')
+
+        if action == 'restore_json_dry_run':
+            uploaded = request.FILES.get('backup_file')
+            if not uploaded:
+                messages.error(request, 'Please choose a JSON backup file for dry run.')
+                return redirect('dashboard:backups')
+
+            temp_path = None
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as tmp:
+                    for chunk in uploaded.chunks():
+                        tmp.write(chunk)
+                    temp_path = tmp.name
+
+                integrity_ok, integrity_error, summary = summarize_backup_json_file(temp_path)
+                if not integrity_ok:
+                    raise ValueError(integrity_error)
+
+                summary_lines = [
+                    f"Dry run OK: {summary.get('total_records', 0)} records across {summary.get('total_models', 0)} models.",
+                ]
+                top_models = sorted(summary.get('model_counts', {}).items(), key=lambda pair: pair[1], reverse=True)[:8]
+                if top_models:
+                    summary_lines.append('Top models: ' + ', '.join([f"{name}={count}" for name, count in top_models]))
+
+                request.session['backup_dry_run_summary'] = summary_lines
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_RESTORE_DRY_RUN,
+                    status=BackupHistory.STATUS_SUCCESS,
+                    destination='local',
+                    file_size_bytes=uploaded.size,
+                    integrity_ok=True,
+                    details=' | '.join(summary_lines),
+                )
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Restore dry run',
+                    metadata=' | '.join(summary_lines),
+                )
+                messages.success(request, summary_lines[0])
+            except Exception as exc:
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_RESTORE_DRY_RUN,
+                    status=BackupHistory.STATUS_FAILED,
+                    destination='local',
+                    file_size_bytes=getattr(uploaded, 'size', 0),
+                    integrity_ok=False,
+                    details=str(exc),
+                )
+                messages.error(request, f'Dry run failed: {exc}')
+            finally:
+                if temp_path and os.path.exists(temp_path):
+                    os.remove(temp_path)
+
+            return redirect('dashboard:backups')
+
+        if action == 'run_firebase_coverage_report':
+            try:
+                report = generate_firebase_coverage_report()
+                request.session['backup_coverage_report'] = report
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_COVERAGE_REPORT,
+                    status=BackupHistory.STATUS_SUCCESS,
+                    destination='firebase',
+                    integrity_ok=True,
+                    details=(
+                        f"db={report['total_db_files']}, matched={report['matched_files']}, "
+                        f"missing={report['missing_files']}"
+                    ),
+                )
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Run Firebase coverage report',
+                    metadata=(
+                        f"db={report['total_db_files']}, matched={report['matched_files']}, "
+                        f"missing={report['missing_files']}"
+                    ),
+                )
+                messages.success(request, 'Coverage report generated.')
+            except Exception as exc:
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_COVERAGE_REPORT,
+                    status=BackupHistory.STATUS_FAILED,
+                    destination='firebase',
+                    integrity_ok=False,
+                    details=str(exc),
+                )
+                messages.error(request, f'Coverage report failed: {exc}')
+            return redirect('dashboard:backups')
+
+        if action == 'restore_json':
+            uploaded = request.FILES.get('backup_file')
+            if not uploaded:
+                messages.error(request, 'Please choose a JSON backup file to restore.')
+                return redirect('dashboard:backups')
+
+            if not uploaded.name.lower().endswith('.json'):
+                messages.error(request, 'Only .json backup files are supported.')
+                return redirect('dashboard:backups')
+
+            temp_path = None
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.json') as tmp:
+                    for chunk in uploaded.chunks():
+                        tmp.write(chunk)
+                    temp_path = tmp.name
+
+                integrity_ok, integrity_error, summary = summarize_backup_json_file(temp_path)
+                if not integrity_ok:
+                    raise ValueError(integrity_error)
+
+                call_command('loaddata', temp_path)
+                detail_text = f"Restored {summary.get('total_records', 0)} records across {summary.get('total_models', 0)} models"
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_RESTORE,
+                    status=BackupHistory.STATUS_SUCCESS,
+                    destination='local',
+                    file_size_bytes=uploaded.size,
+                    integrity_ok=True,
+                    details=detail_text,
+                )
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Restore backup',
+                    metadata=detail_text,
+                )
+                messages.success(request, 'Backup restored successfully.')
+            except Exception as exc:
+                log_backup_history(
+                    request_user=request.user,
+                    action_type=BackupHistory.TYPE_RESTORE,
+                    status=BackupHistory.STATUS_FAILED,
+                    destination='local',
+                    file_size_bytes=getattr(uploaded, 'size', 0),
+                    integrity_ok=False,
+                    details=str(exc),
+                )
+                messages.error(request, f'Restore failed: {exc}')
+            finally:
+                if temp_path and os.path.exists(temp_path):
+                    os.remove(temp_path)
+
+            return redirect('dashboard:backups')
+
+        if action == 'export_history_pdf':
+            try:
+                buffer = generate_pdf_backup_history()
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Export backup history as PDF',
+                    metadata='',
+                )
+                response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="backup_history_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+                return response
+            except Exception as exc:
+                messages.error(request, f'PDF export failed: {exc}')
+                return redirect('dashboard:backups')
+
+        if action == 'export_audit_pdf':
+            try:
+                buffer = generate_pdf_audit_trail()
+                log_backup_audit(
+                    request_user=request.user,
+                    action='Export audit trail as PDF',
+                    metadata='',
+                )
+                response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="backup_audit_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+                return response
+            except Exception as exc:
+                messages.error(request, f'PDF export failed: {exc}')
+                return redirect('dashboard:backups')
+
+    context = {
+        'backup_setting': setting,
+        'backup_history': BackupHistory.objects.select_related('triggered_by')[:30],
+        'backup_audit_logs': BackupAuditLog.objects.select_related('user')[:30],
+        'coverage_report': request.session.pop('backup_coverage_report', None),
+        'dry_run_summary': request.session.pop('backup_dry_run_summary', None),
+        'pretty_bytes': pretty_bytes,
+    }
+    return render(request, 'dashboard/backups.html', context)
+
 def get_dashboard_stats(request):
     """Get overall dashboard statistics"""
     now = timezone.now()
@@ -792,6 +1453,7 @@ def get_dashboard_stats(request):
             'sent_this_week': Notification.objects.filter(sent_at__gte=week_ago).count(),
         },
         'recent_activity': get_recent_activity(),
+        'backup_summary': get_backup_summary(),
     }
 
 def get_recent_activity():

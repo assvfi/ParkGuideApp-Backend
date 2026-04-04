@@ -8,6 +8,7 @@ urlpatterns = [
     path('', views.index_redirect, name='index'),
     path('login/', LoginView.as_view(template_name='dashboard/login.html', next_page='dashboard:home'), name='login'),
     path('logout/', LogoutView.as_view(next_page='dashboard:login'), name='logout'),
+    path('dashboard/sso/', views.dashboard_sso_login, name='sso_login'),
     path('dashboard/', views.dashboard_home, name='home'),
     path('dashboard/users/', views.dashboard_users, name='users'),
     path('dashboard/courses/', views.dashboard_courses, name='courses'),
@@ -17,4 +18,5 @@ urlpatterns = [
     path('notifications/feed/', views.header_notifications_feed, name='header_notifications_feed'),
     path('notifications/actions/', views.header_notifications_action, name='header_notifications_action'),
     path('dashboard/secure-files/', views.dashboard_secure_files, name='secure_files'),
+    path('dashboard/backups/', views.dashboard_backups, name='backups'),
 ]

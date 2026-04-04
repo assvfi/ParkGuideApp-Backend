@@ -723,6 +723,9 @@
                 <a href="{% url 'dashboard:secure_files' %}" class="nav-link {% if request.resolver_match.url_name == 'secure_files' %}active{% endif %}">
                     <i class="bi bi-cloud-upload"></i> Secure Files
                 </a>
+                <a href="{% url 'dashboard:backups' %}" class="nav-link {% if request.resolver_match.url_name == 'backups' %}active{% endif %}">
+                    <i class="bi bi-database"></i> Backups
+                </a>
             </nav>
 
             <div class="pt-4 border-top">
