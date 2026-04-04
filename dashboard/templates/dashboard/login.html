@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sarawak Forestry Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <script>
         (function() {
             const html = document.documentElement;
@@ -267,7 +268,7 @@
 </head>
 <body>
     <button class="theme-toggle-small" onclick="toggleTheme()" title="Toggle dark mode">
-        <span id="themeIcon">🌙</span>
+        <i id="themeIcon" class="bi bi-moon"></i>
     </button>
 
     <div class="login-container">
@@ -329,13 +330,13 @@
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             
-            document.getElementById('themeIcon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            document.getElementById('themeIcon').className = newTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
         }
 
         window.addEventListener('DOMContentLoaded', function() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
-            document.getElementById('themeIcon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+            document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon';
         });
     </script>
 </body>

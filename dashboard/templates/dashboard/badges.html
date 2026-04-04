@@ -1,6 +1,6 @@
 {% extends "dashboard/base.html" %}
 
-{% block page_title %}🏆 Badge Management{% endblock %}
+{% block page_title %}<i class="bi bi-trophy-fill me-2"></i>Badge Management{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -62,7 +62,7 @@
 <div class="badge-grid">
     {% for badge in badges %}
     <div class="glass-card badge-card">
-        <div class="badge-art">🎖️</div>
+        <div class="badge-art"><i class="bi bi-patch-check-fill"></i></div>
         <h4 class="fw-bold">{{ badge.name }}</h4>
         <p class="text-muted small">{{ badge.description }}</p>
         

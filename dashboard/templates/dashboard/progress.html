@@ -1,7 +1,7 @@
 {% extends "dashboard/base.html" %}
 
 {% block title %}Progress - Dashboard{% endblock %}
-{% block page_title %}📈 Learner Progress{% endblock %}
+{% block page_title %}<i class="bi bi-graph-up-arrow me-2"></i>Learner Progress{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -228,7 +228,7 @@
         {% endif %}
     {% else %}
         <div class="text-center py-5">
-            <div class="display-6 mb-2">📊</div>
+            <div class="display-6 mb-2"><i class="bi bi-bar-chart-line"></i></div>
             <p class="text-muted mb-0">No progress records found.</p>
         </div>
     {% endif %}

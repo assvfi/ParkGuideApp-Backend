@@ -1,7 +1,7 @@
 {% extends "dashboard/base.html" %}
 
 {% block title %}Notifications - Dashboard{% endblock %}
-{% block page_title %}🔔 Notifications{% endblock %}
+{% block page_title %}<i class="bi bi-bell-fill me-2"></i>Notifications{% endblock %}
 {% block extra_css %}
 <style>
     .notification-mobile-card {
@@ -365,7 +365,7 @@
     {% endif %}
     {% else %}
         <div class="text-center py-5">
-            <div class="display-6 mb-2">📭</div>
+            <div class="display-6 mb-2"><i class="bi bi-inbox"></i></div>
             <p class="text-muted mb-0">No notifications found.</p>
         </div>
     {% endif %}
