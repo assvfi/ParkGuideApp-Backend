@@ -10,3 +10,4 @@ env/
 !.env.example
 secrets
 .agents
+.DS_Store

@@ -1,6 +1,6 @@
 # Park Guide App Backend
 
-Django REST backend for the Park Guide App training module.
+Django REST backend for the Park Guide App training platform. This service handles authentication, training content, learner progress, badges, notifications, and secure file delivery.
 
 ## Stack
 - Django + Django REST Framework
@@ -9,11 +9,14 @@ Django REST backend for the Park Guide App training module.
 - Custom user model (`accounts.CustomUser`)
 - Firebase secure file storage
 
-## Current Features
-- Course and module APIs
-- Module completion tracking per user
-- Course-level progress tracking per user
-- Admin pages for courses, modules, module progress, and course progress
+## Features
+- Email-based registration and login
+- Training courses and modules API
+- Module completion and course progress tracking
+- Badge progress and awarded badge endpoints
+- In-app notifications with read/clear actions
+- Secure file upload, download, and temporary signed URLs using Firebase Storage
+- Django admin for courses, badges, notifications, users, and files
 
 ## Prerequisites
 - Python 3.10+
@@ -66,48 +69,55 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-5. Create admin user (to access admin dashboard):
+5. Load the bundled training data.
+
+```bash
+python manage.py load_training_courses
+```
+
+6. Create an admin user.
 
 ```bash
 python manage.py createsuperuser
 ```
 
-6. Start server:
+7. Verify Firebase Storage access.
+
+```bash
+python manage.py bootstrap_private_bucket
+```
+
+8. Optionally seed demo badges.
+
+```bash
+python manage.py seed_demo_badges
+```
+
+9. Start the server.
 
 ```bash
 python manage.py runserver
 ```
 
-Server URL:
-- `http://127.0.0.1:8000` (For android dev build using physical phone, please set this: adb reverse tcp:8000 tcp:8000)
+Default local URL:
+- `http://127.0.0.1:8000`
 
-## API Base Paths
-- App API root: `/api/`
-- Auth API root: `/api/accounts/`
-- Notifications API root: `/api/notifications/`
-- User progress API root: `/api/user-progress/`
-- Secure files API root: `/api/secure-files/`
+If you are testing from a physical Android device through a local dev build:
 
-## Authentication Endpoints
-- `POST /api/accounts/register/` – register user
-- `POST /api/accounts/login/` – get JWT `access` and `refresh`
+```bash
+adb reverse tcp:8000 tcp:8000
+```
 
-All course/progress endpoints require `Authorization: Bearer <access_token>`.
+## Neon Database
+This backend now expects a Postgres connection string through `DATABASE_URL`, which makes Neon the easiest deployment target.
 
-## Training Endpoints
-- `GET /api/courses/` – list courses with nested modules
-- `GET /api/modules/` – list modules
-- `GET /api/progress/` – list module progress rows for logged-in user
-- `GET /api/course-progress/` – list course progress rows for logged-in user
-- `POST /api/complete-module/` – mark module completed and auto-update course progress
+Example format:
 
-## Notification Endpoints
-- `GET /api/notifications/items/` – list notifications for logged-in user
-- `POST /api/notifications/items/{id}/mark-read/` – mark one notification as read
-- `POST /api/notifications/items/mark-all-read/` – mark all as read
-- `POST /api/notifications/items/clear-read/` – delete all read notifications for user
+```env
+DATABASE_URL=postgresql://username:password@ep-example.ap-southeast-1.aws.neon.tech/dbname?sslmode=require
+```
 
-All notification endpoints require `Authorization: Bearer <access_token>`.
+If the database is brand new, run:
 
 ## Secure File Endpoints (Firebase Storage)
 - `GET /api/secure-files/files/` – list your uploaded files (admin sees all)
@@ -116,7 +126,8 @@ All notification endpoints require `Authorization: Bearer <access_token>`.
 - `GET /api/secure-files/files/{id}/download-url/` – new temporary download URL
 - `DELETE /api/secure-files/files/{id}/` – delete a file
 
-All secure-file endpoints require `Authorization: Bearer <access_token>`.
+## Firebase Storage
+Secure file uploads are stored in Firebase Storage.
 
 ## Firebase Setup
 
@@ -125,37 +136,76 @@ All secure-file endpoints require `Authorization: Bearer <access_token>`.
 python manage.py bootstrap_private_bucket
 ```
 
-### Example `course-progress` response row
+If configured correctly, the command confirms that the bucket is accessible.
 
-```json
-{
-  "id": 1,
-  "user": 2,
-  "course": 1,
-  "completed_modules": 2,
-  "total_modules": 5,
-  "progress": 0.4,
-  "completed": false,
-  "updated_at": "2026-03-16T12:00:00Z"
-}
-```
+## API Overview
+Base routes:
+- `/api/`
+- `/api/accounts/`
+- `/api/notifications/`
+- `/api/user-progress/`
+- `/api/secure-files/`
+
+Authentication:
+- `POST /api/accounts/register/`
+- `POST /api/accounts/login/`
+- `POST /api/accounts/token/refresh/`
+
+Training:
+- `GET /api/courses/`
+- `GET /api/modules/`
+- `GET /api/progress/`
+- `POST /api/progress/`
+- `GET /api/course-progress/`
+- `POST /api/course-progress/`
+- `POST /api/complete-module/`
+
+Badges:
+- `GET /api/user-progress/badges/`
+- `GET /api/user-progress/my-badges/`
+
+Notifications:
+- `GET /api/notifications/items/`
+- `POST /api/notifications/items/{id}/mark-read/`
+- `POST /api/notifications/items/mark-all-read/`
+- `POST /api/notifications/items/clear-read/`
+
+Secure files:
+- `GET /api/secure-files/files/`
+- `POST /api/secure-files/files/` with multipart field `file`
+- `GET /api/secure-files/files/{id}/`
+- `DELETE /api/secure-files/files/{id}/`
+- `GET /api/secure-files/files/{id}/download-url/`
+- `GET /api/secure-files/files/{id}/download/`
+
+All API endpoints require `Authorization: Bearer <access_token>` unless noted otherwise.
 
 ## Admin
-Open Django admin:
-- `http://127.0.0.1:8000/admin/`
+Admin URL:
+- `/admin/`
 
-Available sections under Courses:
-- Course
-- Module
+Main admin areas include:
+- Accounts
+- Courses and modules
+- User progress
+- Badges and awarded badges
+- Notifications
+- Secure files
 
-Available sections under User Progress:
-- Module progress
-- Course progress
-- Badge
-- User badge
+Notification send flow:
+1. Create a notification in Django admin.
+2. Select it in the changelist.
+3. Run the action to send it to users.
 
-Available sections under Secure Files:
-- Secure files (includes drag-and-drop upload area in admin list page)
+## Useful Commands
+```bash
+python manage.py migrate
+python manage.py load_training_courses
+python manage.py seed_demo_badges
+python manage.py bootstrap_private_bucket
+python manage.py createsuperuser
+python manage.py runserver
+```
 
 Available sections under Notifications:
 - Notification

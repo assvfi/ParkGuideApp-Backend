@@ -1,5 +1,5 @@
 # accounts/views.py
-from rest_framework import generics, permissions, serializers
+from rest_framework import generics, permissions, serializers, throttling
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -45,3 +45,5 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [throttling.ScopedRateThrottle]
+    throttle_scope = 'login'
