@@ -86,12 +86,12 @@
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Tracking</label>
+            <label class="form-label">Response Type</label>
             <select name="tracking_type" id="trackingTypeSelect" class="form-select" required>
-                <option value="admin_shared">Shared admin read</option>
-                <option value="info_only" selected>Info only</option>
-                <option value="user_read">User read tracking</option>
-                <option value="user_ack">User acknowledgement</option>
+                <option value="admin_shared">Any admin can mark as read</option>
+                <option value="info_only" selected>No response needed</option>
+                <option value="user_read">Read confirmation</option>
+                <option value="user_ack">User acknowledgement required</option>
             </select>
         </div>
 
@@ -155,7 +155,7 @@
                     <tr>
                         <th class="text-center">Notification</th>
                         <th class="text-center">Audience</th>
-                        <th class="text-center">Tracking</th>
+                        <th class="text-center">Response Type</th>
                         <th class="text-center">Admin Status</th>
                         <th class="text-center">Sent</th>
                         <th class="text-center">Actions</th>
@@ -183,19 +183,19 @@
                             <td class="text-center">
                                 {% if item.tracking_type == 'admin_shared' %}
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
-                                        Shared admin read
+                                        Any admin can mark as read
                                     </span>
                                 {% elif item.tracking_type == 'info_only' %}
                                     <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                                        Info only
+                                        No response needed
                                     </span>
                                 {% elif item.tracking_type == 'user_read' %}
                                     <span class="badge bg-info-subtle text-info border border-info-subtle">
-                                        {{ item.read_count }}/{{ item.recipient_count }} read
+                                        {{ item.read_count }}/{{ item.recipient_count }} Confirmed read
                                     </span>
                                 {% elif item.tracking_type == 'user_ack' %}
                                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
-                                        {{ item.read_count }}/{{ item.recipient_count }} acknowledged
+                                        {{ item.read_count }}/{{ item.recipient_count }} User acknowledged
                                     </span>
                                 {% endif %}
                             </td>
@@ -270,7 +270,7 @@
                     <div class="small text-muted mt-2 mb-3">
                         <strong>Target Audience:</strong> {{ item.display_audience }}
                         <span class="mx-2">•</span>
-                        <strong>Tracking:</strong> {{ item.display_tracking }}
+                        <strong>Response Type:</strong> {{ item.display_tracking }}
                         {% if item.display_regarding %}
                             <span class="mx-2">•</span>
                             <strong>Regarding:</strong> {{ item.display_regarding }}
@@ -386,7 +386,7 @@
                         <div class="fw-semibold" id="notificationModalAudience"></div>
                     </div>
                     <div class="col-md-4">
-                        <div class="small text-muted text-uppercase fw-semibold">Tracking</div>
+                        <div class="small text-muted text-uppercase fw-semibold">Response Type</div>
                         <div class="fw-semibold" id="notificationModalTracking"></div>
                     </div>
                     <div class="col-md-4">

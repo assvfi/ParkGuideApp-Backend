@@ -437,13 +437,13 @@ def decorate_notification_for_dashboard(item):
         else:
             item.display_audience = f'{item.recipient_count} Selected Guides'
     if item.tracking_type == Notification.TRACKING_ADMIN_SHARED:
-        item.display_tracking = 'Shared admin read'
+        item.display_tracking = 'Any admin can mark as read'
     elif item.tracking_type == Notification.TRACKING_INFO_ONLY:
-        item.display_tracking = 'Info only'
+        item.display_tracking = 'No response needed'
     elif item.tracking_type == Notification.TRACKING_USER_READ:
-        item.display_tracking = f'{item.read_count}/{item.recipient_count} read'
+        item.display_tracking = f'{item.read_count}/{item.recipient_count} Confirmed read'
     elif item.tracking_type == Notification.TRACKING_USER_ACK:
-        item.display_tracking = f'{item.read_count}/{item.recipient_count} acknowledged'
+        item.display_tracking = f'{item.read_count}/{item.recipient_count} User acknowledged'
     else:
         item.display_tracking = '-'
     if item.related_user:

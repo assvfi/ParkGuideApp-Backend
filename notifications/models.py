@@ -16,10 +16,10 @@ class Notification(models.Model):
     TRACKING_USER_READ = 'user_read'
     TRACKING_USER_ACK = 'user_ack'
     TRACKING_CHOICES = [
-        (TRACKING_ADMIN_SHARED, 'Shared admin read'),
-        (TRACKING_INFO_ONLY, 'Info only'),
-        (TRACKING_USER_READ, 'User read tracking'),
-        (TRACKING_USER_ACK, 'User acknowledgement'),
+        (TRACKING_ADMIN_SHARED, 'Any admin can mark as read'),
+        (TRACKING_INFO_ONLY, 'No response needed'),
+        (TRACKING_USER_READ, 'Read confirmation'),
+        (TRACKING_USER_ACK, 'User acknowledgement required'),
     ]
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=255, blank=True)
