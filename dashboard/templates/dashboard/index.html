@@ -109,6 +109,193 @@
     [data-theme="dark"] .recent-activity-scroll {
         color: #e0e0e0;
     }
+
+    .backup-chart-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 190px;
+        margin: 0 auto 0.75rem;
+    }
+
+    .backup-chart-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .backup-chart-stat {
+        padding: 0.85rem 0.95rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(45, 106, 79, 0.08), rgba(45, 106, 79, 0.03));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+
+    .backup-chart-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .backup-chart-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        flex: 0 0 10px;
+    }
+
+    .backup-chart-value {
+        font-size: 1.4rem;
+        line-height: 1.1;
+        font-weight: 800;
+        margin-top: 0.45rem;
+    }
+
+    .backup-chart-footnote {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    [data-theme="dark"] .backup-chart-stat {
+        background: rgba(82, 183, 136, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    .backup-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .backup-summary-tile {
+        min-height: 168px;
+        border-radius: 20px;
+        border: 1px solid rgba(45, 106, 79, 0.18);
+        background:
+            radial-gradient(circle at top right, rgba(82, 183, 136, 0.12), transparent 42%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(45, 106, 79, 0.04));
+        padding: 1.25rem;
+    }
+
+    .backup-summary-kicker {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 800;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+    }
+
+    .backup-summary-value {
+        font-size: clamp(1.55rem, 3vw, 2.35rem);
+        line-height: 1.1;
+        font-weight: 800;
+    }
+
+    .backup-summary-subtext {
+        margin-top: 0.65rem;
+        color: var(--text-muted);
+    }
+
+    .backup-pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-top: 0.85rem;
+    }
+
+    .insight-card {
+        margin-bottom: 1rem;
+    }
+
+    .insight-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .insight-control {
+        flex: 1 1 220px;
+    }
+
+    .insight-chart-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .insight-chart-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 220px;
+        margin: 0 auto;
+    }
+
+    .insight-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .insight-metric {
+        padding: 0.95rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(45, 106, 79, 0.04);
+    }
+
+    .insight-metric-label {
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+    }
+
+    .insight-metric-value {
+        margin-top: 0.45rem;
+        font-size: 1.45rem;
+        line-height: 1.1;
+        font-weight: 800;
+    }
+
+    .insight-helper {
+        margin-top: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    [data-theme="dark"] .backup-summary-tile {
+        border-color: rgba(82, 183, 136, 0.18);
+        background:
+            radial-gradient(circle at top right, rgba(82, 183, 136, 0.12), transparent 42%),
+            linear-gradient(180deg, rgba(22, 27, 24, 0.94), rgba(82, 183, 136, 0.05));
+    }
+
+    [data-theme="dark"] .insight-metric {
+        background: rgba(82, 183, 136, 0.08);
+    }
+
+    @media (max-width: 991.98px) {
+        .insight-chart-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .backup-summary-grid,
+        .insight-metrics,
+        .backup-chart-meta {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -155,47 +342,47 @@
                 <h5 class="fw-bold mb-0"><i class="bi bi-server text-info me-2"></i>System Backups</h5>
                 <a href="{% url 'dashboard:backups' %}" class="btn btn-sm btn-outline-primary">Manage</a>
             </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="glass-card p-3">
-                        <div class="text-muted small fw-bold mb-1">Auto-Backups</div>
-                        <div class="h4 fw-800 mb-2 {% if backup_summary.auto_backup_enabled %}text-success{% else %}text-warning{% endif %}">
+            <div class="backup-summary-grid">
+                <div class="backup-summary-tile">
+                    <div class="backup-summary-kicker">Auto-Backups</div>
+                    <div class="backup-summary-value {% if backup_summary.auto_backup_enabled %}text-success{% else %}text-warning{% endif %}">
                             {% if backup_summary.auto_backup_enabled %}<i class="bi bi-check-circle"></i> Enabled{% else %}<i class="bi bi-exclamation-circle"></i> Disabled{% endif %}
-                        </div>
-                        {% if backup_summary.next_backup_at %}
-                        <div class="small text-muted">Next: {{ backup_summary.next_backup_at|date:"Y-m-d H:i" }}</div>
+                    </div>
+                    {% if backup_summary.next_backup_at %}
+                    <div class="backup-summary-subtext">Next: {{ backup_summary.next_backup_at|date:"Y-m-d H:i" }}</div>
+                    {% else %}
+                    <div class="backup-summary-subtext">Not scheduled</div>
+                    {% endif %}
+                </div>
+                <div class="backup-summary-tile">
+                    <div class="backup-summary-kicker">Last Backup</div>
+                    <div class="backup-summary-value {% if backup_summary.last_backup_status == 'success' %}text-success{% else %}text-danger{% endif %}">
+                        {% if backup_summary.last_backup_at %}
+                            {% if backup_summary.last_backup_status == 'success' %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-x-circle"></i>{% endif %} {{ backup_summary.last_backup_at|timesince }} ago
                         {% else %}
-                        <div class="small text-muted">Not scheduled</div>
+                            <span class="text-muted">Never</span>
+                        {% endif %}
+                    </div>
+                    <div class="backup-summary-subtext">
+                        {% if backup_summary.last_backup_at %}
+                            Checked at {{ backup_summary.last_backup_at|date:"Y-m-d H:i" }}
+                        {% else %}
+                            No history logged yet
                         {% endif %}
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="glass-card p-3">
-                        <div class="text-muted small fw-bold mb-1">Last Backup</div>
-                        <div class="h4 fw-800 mb-2 {% if backup_summary.last_backup_status == 'success' %}text-success{% else %}text-danger{% endif %}">
-                            {% if backup_summary.last_backup_at %}
-                                {% if backup_summary.last_backup_status == 'success' %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-x-circle"></i>{% endif %} {{ backup_summary.last_backup_at|timesince }} ago
-                            {% else %}
-                                <span class="text-muted small">Never</span>
-                            {% endif %}
-                        </div>
-                    </div>
+                <div class="backup-summary-tile">
+                    <div class="backup-summary-kicker">Firebase Backups</div>
+                    <div class="backup-summary-value text-info">{{ backup_summary.firebase_backup_count }}<span class="fs-4 text-muted ms-2">files</span></div>
+                    <div class="backup-summary-subtext">Max retention: {{ backup_summary.retention_count }}</div>
                 </div>
-                <div class="col-md-6">
-                    <div class="glass-card p-3">
-                        <div class="text-muted small fw-bold mb-1">Firebase Backups</div>
-                        <div class="h4 fw-800 mb-2 text-info">{{ backup_summary.firebase_backup_count }}<span class="small text-muted ms-1">files</span></div>
-                        <div class="small text-muted">Max: {{ backup_summary.retention_count }}</div>
+                <div class="backup-summary-tile">
+                    <div class="backup-summary-kicker">Backup Status</div>
+                    <div class="backup-pill-row">
+                        <span class="badge bg-success fs-6 px-3 py-2">{{ backup_summary.successful_backups }} Success</span>
+                        <span class="badge bg-danger fs-6 px-3 py-2">{{ backup_summary.failed_backups }} Failed</span>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="glass-card p-3">
-                        <div class="text-muted small fw-bold mb-1">Backup Status</div>
-                        <div class="mb-2">
-                            <span class="badge bg-success me-2">{{ backup_summary.successful_backups }} Success</span>
-                            <span class="badge bg-danger">{{ backup_summary.failed_backups }} Failed</span>
-                        </div>
-                    </div>
+                    <div class="backup-summary-subtext">Healthy status snapshot from the latest backup history.</div>
                 </div>
             </div>
         </div>
@@ -203,37 +390,100 @@
     <div class="col-lg-6">
         <div class="glass-card h-100">
             <h5 class="fw-bold mb-3"><i class="bi bi-graph-up text-success me-2"></i>Backup Quick Stats</h5>
-            <ul class="list-unstyled small">
-                <li class="mb-2 pb-2 border-bottom">
-                    <span class="text-muted">Total Logged:</span>
-                    <span class="fw-bold float-end">{{ backup_summary.total_backups_logged }}</span>
-                </li>
-                <li class="mb-2 pb-2 border-bottom">
-                    <span class="text-muted">Success Rate:</span>
-                    <span class="fw-bold float-end">
+            <div class="backup-chart-wrap">
+                <canvas id="backupQuickStatsChart" aria-label="Backup success and failure pie chart" role="img"></canvas>
+            </div>
+            <div class="backup-chart-meta">
+                <div class="backup-chart-stat">
+                    <div class="backup-chart-label">
+                        <span class="backup-chart-dot" style="background: #198754;"></span>
+                        Success
+                    </div>
+                    <div class="backup-chart-value text-success">{{ backup_summary.successful_backups }}</div>
+                </div>
+                <div class="backup-chart-stat">
+                    <div class="backup-chart-label">
+                        <span class="backup-chart-dot" style="background: #dc3545;"></span>
+                        Failed
+                    </div>
+                    <div class="backup-chart-value text-danger">{{ backup_summary.failed_backups }}</div>
+                </div>
+                <div class="backup-chart-stat">
+                    <div class="backup-chart-label">Total Logged</div>
+                    <div class="backup-chart-value">{{ backup_summary.total_backups_logged }}</div>
+                </div>
+                <div class="backup-chart-stat">
+                    <div class="backup-chart-label">Success Rate</div>
+                    <div class="backup-chart-value">
                         {% if backup_summary.total_backups_logged > 0 %}
                             {% widthratio backup_summary.successful_backups backup_summary.total_backups_logged 100 %}%
                         {% else %}
                             N/A
                         {% endif %}
-                    </span>
-                </li>
-                <li class="mb-2 pb-2 border-bottom">
-                    <span class="text-muted">System Status:</span>
-                    <span class="fw-bold float-end">
-                        {% if backup_summary.last_backup_status == 'success' %}
-                            <span class="badge bg-success">Healthy</span>
-                        {% elif backup_summary.last_backup_status == 'failed' %}
-                            <span class="badge bg-danger">Failed</span>
-                        {% else %}
-                            <span class="badge bg-warning">Unknown</span>
-                        {% endif %}
-                    </span>
-                </li>
-                <li class="mt-3 pt-2">
-                    <div class="text-muted small">Last checked: <strong>{{ backup_summary.last_backup_at|date:"Y-m-d H:i" }}</strong></div>
-                </li>
-            </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="backup-chart-footnote text-muted small">
+                Last checked:
+                <strong>{{ backup_summary.last_backup_at|date:"Y-m-d H:i"|default:"Not available" }}</strong>
+                <span class="mx-2">•</span>
+                Status:
+                {% if backup_summary.last_backup_status == 'success' %}
+                    <span class="badge bg-success">Healthy</span>
+                {% elif backup_summary.last_backup_status == 'failed' %}
+                    <span class="badge bg-danger">Failed</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Unknown</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card insight-card">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-pie-chart text-primary me-2"></i>Learning Insights</h5>
+        <a href="{% url 'dashboard:progress' %}" class="btn btn-sm btn-outline-primary">Open Progress</a>
+    </div>
+    <div class="insight-controls">
+        <div class="insight-control">
+            <label class="form-label small fw-bold text-muted">Course Filter</label>
+            <select id="learningInsightCourse" class="form-select">
+                {% for option in learning_insights.course_options %}
+                    <option value="{{ option.id }}"{% if option.id == learning_insights.selected_course_id %} selected{% endif %}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="insight-control">
+            <label class="form-label small fw-bold text-muted">Chart View</label>
+            <select id="learningInsightMetric" class="form-select">
+                <option value="learner_status">Learner Status</option>
+                <option value="module_coverage">Module Coverage</option>
+            </select>
+        </div>
+    </div>
+    <div class="insight-chart-layout">
+        <div class="insight-chart-wrap">
+            <canvas id="learningInsightsChart" aria-label="Learning insights pie chart" role="img"></canvas>
+        </div>
+        <div>
+            <div class="insight-metrics">
+                <div class="insight-metric">
+                    <div class="insight-metric-label">Selection</div>
+                    <div class="insight-metric-value" id="learningInsightSelection">All Courses</div>
+                </div>
+                <div class="insight-metric">
+                    <div class="insight-metric-label">Modules</div>
+                    <div class="insight-metric-value" id="learningInsightModules">0</div>
+                </div>
+                <div class="insight-metric">
+                    <div class="insight-metric-label">Avg Progress</div>
+                    <div class="insight-metric-value" id="learningInsightProgress">0%</div>
+                </div>
+            </div>
+            <div class="insight-helper small" id="learningInsightHelper">
+                Review completion mix across all courses, or narrow down to a single course and switch to module coverage.
+            </div>
         </div>
     </div>
 </div>
@@ -309,4 +559,139 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{{ learning_insights.datasets|json_script:"learning-insights-data" }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof Chart === 'undefined') return;
+
+        const rootStyles = getComputedStyle(document.documentElement);
+        const borderColor = rootStyles.getPropertyValue('--bg-card').trim() || '#ffffff';
+        const textColor = rootStyles.getPropertyValue('--text-main').trim() || '#1b4332';
+
+        function buildPieChart(canvasId, config) {
+            const chartEl = document.getElementById(canvasId);
+            if (!chartEl) return null;
+
+            return new Chart(chartEl, {
+                type: 'pie',
+                data: {
+                    labels: config.labels,
+                    datasets: [{
+                        data: config.values,
+                        backgroundColor: config.colors,
+                        borderColor,
+                        borderWidth: 4,
+                        hoverOffset: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: config.legendPosition || 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 18,
+                                color: textColor,
+                                font: {
+                                    family: "'Plus Jakarta Sans', sans-serif",
+                                    size: 12,
+                                    weight: '600',
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label(context) {
+                                    const total = context.dataset.data.reduce((sum, value) => sum + value, 0);
+                                    const value = context.raw || 0;
+                                    if (!total) {
+                                        return ' No data available yet';
+                                    }
+                                    const percent = Math.round((value / total) * 100);
+                                    return ` ${context.label}: ${value} (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const successCount = Number('{{ backup_summary.successful_backups|default:0|escapejs }}');
+        const failedCount = Number('{{ backup_summary.failed_backups|default:0|escapejs }}');
+        const backupChart = buildPieChart('backupQuickStatsChart', {
+            labels: successCount + failedCount > 0 ? ['Successful', 'Failed'] : ['No backups logged'],
+            values: successCount + failedCount > 0 ? [successCount, failedCount] : [1],
+            colors: successCount + failedCount > 0 ? ['#198754', '#dc3545'] : ['#cfd8d3'],
+        });
+
+        const insightDataEl = document.getElementById('learning-insights-data');
+        const insightDatasets = insightDataEl ? JSON.parse(insightDataEl.textContent) : {};
+        const courseSelect = document.getElementById('learningInsightCourse');
+        const metricSelect = document.getElementById('learningInsightMetric');
+        const selectionEl = document.getElementById('learningInsightSelection');
+        const modulesEl = document.getElementById('learningInsightModules');
+        const progressEl = document.getElementById('learningInsightProgress');
+        const helperEl = document.getElementById('learningInsightHelper');
+        const learningChartColors = {
+            learner_status: ['#198754', '#0d6efd', '#adb5bd'],
+            module_coverage: ['#ff9f1c', '#ced4da'],
+        };
+
+        const learningChart = buildPieChart('learningInsightsChart', {
+            labels: ['No data available'],
+            values: [1],
+            colors: ['#cfd8d3'],
+            legendPosition: 'bottom',
+        });
+
+        function updateLearningChart() {
+            if (!learningChart || !courseSelect || !metricSelect) return;
+
+            const selectedCourse = courseSelect.value || 'all';
+            const selectedMetric = metricSelect.value || 'learner_status';
+            const currentSet = insightDatasets[selectedCourse] || insightDatasets.all;
+            const metricSet = currentSet[selectedMetric];
+            const rawValues = metricSet ? metricSet.values : [];
+            const total = rawValues.reduce((sum, value) => sum + value, 0);
+            const chartValues = total > 0 ? rawValues : [1];
+            const chartLabels = total > 0 ? metricSet.labels : ['No data available'];
+            const chartColors = total > 0 ? learningChartColors[selectedMetric] : ['#cfd8d3'];
+
+            learningChart.data.labels = chartLabels;
+            learningChart.data.datasets[0].data = chartValues;
+            learningChart.data.datasets[0].backgroundColor = chartColors;
+            learningChart.update();
+
+            if (selectionEl) {
+                selectionEl.textContent = currentSet.label;
+            }
+            if (modulesEl) {
+                modulesEl.textContent = currentSet.summary.modules;
+            }
+            if (progressEl) {
+                progressEl.textContent = `${currentSet.summary.avg_progress}%`;
+            }
+            if (helperEl) {
+                helperEl.textContent = selectedMetric === 'learner_status'
+                    ? `Showing learner completion states for ${currentSet.label.toLowerCase()}.`
+                    : `Showing how many modules in ${currentSet.label.toLowerCase()} already have at least one completion.`;
+            }
+        }
+
+        if (courseSelect) {
+            courseSelect.addEventListener('change', updateLearningChart);
+        }
+        if (metricSelect) {
+            metricSelect.addEventListener('change', updateLearningChart);
+        }
+        updateLearningChart();
+    });
+</script>
 {% endblock %}

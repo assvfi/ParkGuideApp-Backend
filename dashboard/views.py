@@ -212,6 +212,99 @@ def normalize_progress_value(value):
         progress_value *= 100
     return max(0.0, min(100.0, progress_value))
 
+
+def get_display_title(value, fallback='Untitled'):
+    """Return a readable label from multilingual JSON title fields."""
+    if isinstance(value, dict):
+        for key in ('en', 'title', 'name'):
+            text = value.get(key)
+            if text:
+                return str(text)
+        for text in value.values():
+            if text:
+                return str(text)
+    if value:
+        return str(value)
+    return fallback
+
+
+def build_learning_insight_data(selected_course_id=None):
+    """Build filterable chart data for course learning insights."""
+    selected_course_id = str(selected_course_id or 'all')
+    all_courses = list(Course.objects.prefetch_related('modules').all())
+    all_progress = CourseProgress.objects.all()
+    total_modules = Module.objects.count()
+    modules_with_completion = Module.objects.filter(moduleprogress__completed=True).distinct().count()
+
+    datasets = {
+        'all': {
+            'label': 'All Courses',
+            'learner_status': {
+                'labels': ['Completed', 'In Progress', 'Not Started'],
+                'values': [
+                    all_progress.filter(completed=True).count(),
+                    all_progress.filter(completed=False, progress__gt=0).count(),
+                    all_progress.filter(completed=False, progress__lte=0).count(),
+                ],
+            },
+            'module_coverage': {
+                'labels': ['Modules With Completions', 'Modules Awaiting Completion'],
+                'values': [
+                    modules_with_completion,
+                    max(total_modules - modules_with_completion, 0),
+                ],
+            },
+            'summary': {
+                'courses': len(all_courses),
+                'modules': total_modules,
+                'avg_progress': round(normalize_progress_value(all_progress.aggregate(avg=Avg('progress'))['avg'] or 0)),
+            },
+        }
+    }
+
+    for course in all_courses:
+        course_progress = all_progress.filter(course=course)
+        course_modules = course.modules.count()
+        course_completed_modules = Module.objects.filter(course=course, moduleprogress__completed=True).distinct().count()
+        datasets[str(course.id)] = {
+            'label': get_display_title(course.title, fallback=f'Course {course.id}'),
+            'learner_status': {
+                'labels': ['Completed', 'In Progress', 'Not Started'],
+                'values': [
+                    course_progress.filter(completed=True).count(),
+                    course_progress.filter(completed=False, progress__gt=0).count(),
+                    course_progress.filter(completed=False, progress__lte=0).count(),
+                ],
+            },
+            'module_coverage': {
+                'labels': ['Modules With Completions', 'Modules Awaiting Completion'],
+                'values': [
+                    course_completed_modules,
+                    max(course_modules - course_completed_modules, 0),
+                ],
+            },
+            'summary': {
+                'courses': 1,
+                'modules': course_modules,
+                'avg_progress': round(normalize_progress_value(course_progress.aggregate(avg=Avg('progress'))['avg'] or 0)),
+            },
+        }
+
+    if selected_course_id not in datasets:
+        selected_course_id = 'all'
+
+    return {
+        'selected_course_id': selected_course_id,
+        'course_options': [
+            {'id': 'all', 'label': 'All Courses'},
+            *[
+                {'id': str(course.id), 'label': get_display_title(course.title, fallback=f'Course {course.id}')}
+                for course in all_courses
+            ],
+        ],
+        'datasets': datasets,
+    }
+
 def get_backup_summary():
     """Get backup system summary/status."""
     setting = get_or_create_backup_setting()
@@ -1427,6 +1520,7 @@ def get_dashboard_stats(request):
     week_ago = now - timedelta(days=7)
     month_ago = now - timedelta(days=30)
     avg_progress_raw = CourseProgress.objects.aggregate(avg=Avg('progress'))['avg'] or 0
+    selected_course_id = request.GET.get('insight_course', 'all')
     return {
         'stats': {
             'total_users': CustomUser.objects.count(),
@@ -1454,6 +1548,7 @@ def get_dashboard_stats(request):
         },
         'recent_activity': get_recent_activity(),
         'backup_summary': get_backup_summary(),
+        'learning_insights': build_learning_insight_data(selected_course_id),
     }
 
 def get_recent_activity():
