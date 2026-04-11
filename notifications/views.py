@@ -74,3 +74,30 @@ class PushTokenViewSet(viewsets.ModelViewSet):
         push_token.is_active = False
         push_token.save()
         return Response({'status': 'token deactivated'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def unregister(self, request):
+        """Unregister/deactivate a push token by token value (not ID)"""
+        token = request.data.get('token')
+        
+        if not token:
+            return Response(
+                {'error': 'token field is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            push_token = PushToken.objects.get(token=token, user=request.user)
+            push_token.is_active = False
+            push_token.save()
+            return Response(
+                {'status': 'token unregistered', 'token': token},
+                status=status.HTTP_200_OK
+            )
+        except PushToken.DoesNotExist:
+            # Token doesn't exist or doesn't belong to this user - return success anyway
+            # This prevents errors when unregistering a token that was already deleted
+            return Response(
+                {'status': 'token not found (already unregistered)', 'token': token},
+                status=status.HTTP_200_OK
+            )
