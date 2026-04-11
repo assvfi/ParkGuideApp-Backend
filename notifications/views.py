@@ -51,36 +51,22 @@ class PushTokenViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Override create to handle duplicate tokens gracefully"""
-        try:
-            return super().create(request, *args, **kwargs)
-        except serializers.ValidationError as e:
-            # If token already exists, update it instead
-            if 'token' in e.detail and 'already exists' in str(e.detail['token'][0]):
-                token = request.data.get('token')
-                device_type = request.data.get('device_type', 'ios')
-                
-                # Try to delete the old one first if it's not ours
-                try:
-                    old_token = PushToken.objects.get(token=token)
-                    if old_token.user != request.user:
-                        # Token belongs to another user, deactivate the old one
-                        old_token.is_active = False
-                        old_token.save()
-                except PushToken.DoesNotExist:
-                    pass
-                
-                # Now create for our user
-                push_token, created = PushToken.objects.update_or_create(
-                    user=request.user,
-                    token=token,
-                    defaults={
-                        'device_type': device_type,
-                        'is_active': True,
-                    }
-                )
-                serializer = self.get_serializer(push_token)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            raise
+        token = request.data.get('token')
+        device_type = request.data.get('device_type', 'ios')
+        
+        # Try to update existing token for this user, or create new one
+        push_token, created = PushToken.objects.update_or_create(
+            user=request.user,
+            token=token,
+            defaults={
+                'device_type': device_type,
+                'is_active': True,
+            }
+        )
+        
+        serializer = self.get_serializer(push_token)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(serializer.data, status=status_code)
 
     @action(detail=True, methods=['post'])
     def deactivate(self, request, pk=None):

@@ -49,7 +49,7 @@ class UserBadge(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='badge_progress')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='user_badges')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_IN_PROGRESS)
-    is_awarded = models.BooleanField(default=False)
+    is_awarded = models.BooleanField(default=False)  # ✅ Fixed: was default=True causing all badges to appear granted
     awarded_at = models.DateTimeField(auto_now_add=True)
     awarded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

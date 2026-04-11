@@ -4,7 +4,7 @@ from .models import Badge, UserBadge
 
 
 class BadgeStatusSerializer(serializers.ModelSerializer):
-    course_id = serializers.IntegerField(source='course.id', read_only=True)
+    course_id = serializers.SerializerMethodField()  # ✅ Fixed: handles null course
     course_title = serializers.SerializerMethodField()
     earned = serializers.SerializerMethodField()
     pending = serializers.SerializerMethodField()
@@ -40,6 +40,11 @@ class BadgeStatusSerializer(serializers.ModelSerializer):
         if not obj.course:
             return None
         return obj.course.title.get('en', 'Course')
+
+    def get_course_id(self, obj):  # ✅ Added: safely handles null course
+        if not obj.course:
+            return None
+        return obj.course.id
 
     def get_earned(self, obj):
         status = self.get_status(obj)
@@ -81,7 +86,7 @@ class UserBadgeSerializer(serializers.ModelSerializer):
     badge_required_completed_modules = serializers.IntegerField(source='badge.required_completed_modules', read_only=True)
     badge_required_badges_count = serializers.IntegerField(source='badge.required_badges_count', read_only=True)
     badge_is_major_badge = serializers.BooleanField(source='badge.is_major_badge', read_only=True)
-    badge_course_id = serializers.IntegerField(source='badge.course.id', read_only=True)
+    badge_course_id = serializers.SerializerMethodField()  # ✅ Fixed: handles null course
     badge_course_title = serializers.SerializerMethodField()
 
     class Meta:
@@ -101,6 +106,11 @@ class UserBadgeSerializer(serializers.ModelSerializer):
             'awarded_at',
             'revoked_at',
         ]
+
+    def get_badge_course_id(self, obj):  # ✅ Added: safely handles null course
+        if not obj.badge.course:
+            return None
+        return obj.badge.course.id
 
     def get_badge_course_title(self, obj):
         if not obj.badge.course:
