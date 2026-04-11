@@ -1,9 +1,9 @@
 from django.utils import timezone
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Notification, UserNotification
-from .serializers import UserNotificationSerializer
+from .models import Notification, UserNotification, PushToken
+from .serializers import UserNotificationSerializer, PushTokenSerializer
 
 class UserNotificationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserNotificationSerializer
@@ -39,3 +39,52 @@ class UserNotificationViewSet(viewsets.ReadOnlyModelViewSet):
     def clear_read(self, request):
         deleted, _ = self.get_queryset().filter(is_read=True).delete()
         return Response({'deleted': deleted}, status=status.HTTP_200_OK)
+
+
+class PushTokenViewSet(viewsets.ModelViewSet):
+    serializer_class = PushTokenSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete']
+
+    def get_queryset(self):
+        return PushToken.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Override create to handle duplicate tokens gracefully"""
+        try:
+            return super().create(request, *args, **kwargs)
+        except serializers.ValidationError as e:
+            # If token already exists, update it instead
+            if 'token' in e.detail and 'already exists' in str(e.detail['token'][0]):
+                token = request.data.get('token')
+                device_type = request.data.get('device_type', 'ios')
+                
+                # Try to delete the old one first if it's not ours
+                try:
+                    old_token = PushToken.objects.get(token=token)
+                    if old_token.user != request.user:
+                        # Token belongs to another user, deactivate the old one
+                        old_token.is_active = False
+                        old_token.save()
+                except PushToken.DoesNotExist:
+                    pass
+                
+                # Now create for our user
+                push_token, created = PushToken.objects.update_or_create(
+                    user=request.user,
+                    token=token,
+                    defaults={
+                        'device_type': device_type,
+                        'is_active': True,
+                    }
+                )
+                serializer = self.get_serializer(push_token)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            raise
+
+    @action(detail=True, methods=['post'])
+    def deactivate(self, request, pk=None):
+        push_token = self.get_object()
+        push_token.is_active = False
+        push_token.save()
+        return Response({'status': 'token deactivated'}, status=status.HTTP_200_OK)

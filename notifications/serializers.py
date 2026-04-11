@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
-from .models import UserNotification
+from .models import UserNotification, PushToken
 
 
 class UserNotificationSerializer(serializers.ModelSerializer):
@@ -26,3 +26,10 @@ class UserNotificationSerializer(serializers.ModelSerializer):
             hours = minutes // 60
             return f'{hours} hours ago'
         return obj.notification.sent_at.strftime('%b %d, %Y')
+
+
+class PushTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PushToken
+        fields = ['id', 'token', 'device_type', 'created_at', 'updated_at', 'is_active']
+        read_only_fields = ['id', 'created_at', 'updated_at']

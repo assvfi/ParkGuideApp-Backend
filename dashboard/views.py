@@ -33,6 +33,7 @@ from accounts.models import CustomUser
 from courses.models import Course, Module, ModuleProgress, CourseProgress
 from user_progress.models import Badge, UserBadge
 from notifications.models import Notification, UserNotification
+from notifications.services import send_push_to_users
 from secure_files.models import SecureFile
 from secure_files.services.firebase_storage import delete_file as delete_secure_blob, upload_file
 from .models import BackupSetting, BackupHistory, BackupAuditLog
@@ -1103,6 +1104,17 @@ def dashboard_notifications(request):
                 notification = Notification.objects.create(title=title, description=description, full_text=full_text, audience_type=audience_type, tracking_type=tracking_type, created_by=request.user)
                 if recipients:
                     UserNotification.objects.bulk_create([UserNotification(user=user, notification=notification) for user in recipients])
+            
+            # Send push notifications to recipients
+            if recipients:
+                try:
+                    print(f"\n=== DASHBOARD: Sending push notification to {len(recipients)} users ===")
+                    send_push_to_users(recipients, title, description or full_text)
+                    print("Push notifications sent successfully from dashboard")
+                except Exception as e:
+                    print(f"Failed to send push notifications from dashboard: {str(e)}")
+                    messages.warning(request, f'Notification created but push sending failed: {str(e)}')
+            
             if audience_type == Notification.AUDIENCE_ADMINS:
                 messages.success(request, 'Notification sent to admins.')
             elif audience_type == Notification.AUDIENCE_ALL_GUIDES:

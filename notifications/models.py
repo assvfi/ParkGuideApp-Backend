@@ -52,3 +52,27 @@ class UserNotification(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.notification}'
+
+class PushToken(models.Model):
+    DEVICE_TYPE_IOS = 'ios'
+    DEVICE_TYPE_ANDROID = 'android'
+    DEVICE_TYPE_WEB = 'web'
+    DEVICE_TYPE_CHOICES = [
+        (DEVICE_TYPE_IOS, 'iOS'),
+        (DEVICE_TYPE_ANDROID, 'Android'),
+        (DEVICE_TYPE_WEB, 'Web'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='push_tokens')
+    token = models.TextField(unique=True, db_index=True)
+    device_type = models.CharField(max_length=20, choices=DEVICE_TYPE_CHOICES, default=DEVICE_TYPE_IOS)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('user', 'token')
+        ordering = ('-updated_at',)
+
+    def __str__(self):
+        return f'{self.user} - {self.device_type}'
