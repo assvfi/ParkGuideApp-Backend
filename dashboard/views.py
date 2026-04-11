@@ -524,8 +524,9 @@ def dashboard_users(request):
             password = request.POST.get('password', '')
             first_name = request.POST.get('first_name', '').strip()
             last_name = request.POST.get('last_name', '').strip()
+            phone_number = request.POST.get('phone_number', '').strip()
+            birthdate = request.POST.get('birthdate') or None
             is_staff = request.POST.get('is_staff') == 'on'
-
             if not username or not email or not password:
                 messages.error(request, 'Username, email, and password are required.')
             elif CustomUser.objects.filter(email=email).exists():
@@ -539,6 +540,8 @@ def dashboard_users(request):
                     password=password,
                     first_name=first_name,
                     last_name=last_name,
+                    phone_number=phone_number,
+                    birthdate=birthdate,
                     is_staff=is_staff,
                 )
                 messages.success(request, f'User {username} created successfully.')
@@ -575,17 +578,16 @@ def dashboard_users(request):
         if action == 'edit_user':
             user_id = request.POST.get('user_id')
             target_user = CustomUser.objects.filter(id=user_id).first()
-
             if not target_user:
                 messages.error(request, 'User not found.')
                 return redirect('dashboard:users')
-
             username = request.POST.get('username', '').strip()
             email = request.POST.get('email', '').strip().lower()
             first_name = request.POST.get('first_name', '').strip()
             last_name = request.POST.get('last_name', '').strip()
+            phone_number = request.POST.get('phone_number', '').strip()
+            birthdate = request.POST.get('birthdate') or None
             is_staff = request.POST.get('is_staff') == 'on'
-
             if not username or not email:
                 messages.error(request, 'Username and email are required.')
             elif CustomUser.objects.exclude(id=target_user.id).filter(username=username).exists():
@@ -599,30 +601,26 @@ def dashboard_users(request):
                 target_user.email = email
                 target_user.first_name = first_name
                 target_user.last_name = last_name
+                target_user.phone_number = phone_number
+                target_user.birthdate = birthdate
                 target_user.is_staff = is_staff
                 target_user.save()
                 messages.success(request, f'User {target_user.username} updated successfully.')
-
             return redirect('dashboard:users')
 
         if action == 'delete_user':
             user_id = request.POST.get('user_id')
             target_user = CustomUser.objects.filter(id=user_id).first()
-
             if not target_user:
                 messages.error(request, 'User not found.')
                 return redirect('dashboard:users')
-
             if target_user.id == request.user.id:
                 messages.error(request, 'You cannot delete your own account.')
                 return redirect('dashboard:users')
-
             if target_user.is_superuser:
                 messages.error(request, 'Superuser accounts cannot be deleted from this panel.')
                 return redirect('dashboard:users')
-
             username = target_user.username
-
             try:
                 with transaction.atomic():
                     # Delete remote secure-file blobs first
@@ -631,15 +629,11 @@ def dashboard_users(request):
                             delete_secure_blob(secure_file.s3_key)
                         except ImproperlyConfigured:
                             pass
-
                     target_user.delete()
-
                 messages.success(request, f'User {username} deleted successfully.')
             except Exception as exc:
                 messages.error(request, f'Could not delete user: {exc}')
-
             return redirect('dashboard:users')
-
     users = CustomUser.objects.all().order_by('-date_joined')
     
     # Search functionality
@@ -649,7 +643,8 @@ def dashboard_users(request):
             Q(username__icontains=search_query) |
             Q(email__icontains=search_query) |
             Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query)
+            Q(last_name__icontains=search_query) |
+            Q(phone_number__icontains=search_query)
         )
     
     # Pagination
@@ -658,10 +653,8 @@ def dashboard_users(request):
     total_users = users.count()
     start = (int(page) - 1) * per_page
     end = start + per_page
-    
     users_paginated = users[start:end]
     total_pages = (total_users + per_page - 1) // per_page
-    
     context = {
         'users': users_paginated,
         'total_users': total_users,
@@ -869,19 +862,15 @@ def dashboard_badges(request):
                     .select_related('user', 'badge')
                     .filter(status='pending')
                 )
-
                 pending_count = len(pending_requests)
-
                 if pending_count == 0:
                     messages.info(request, 'There are no pending badge requests to approve.')
                     return redirect('dashboard:badges')
-
                 for user_badge in pending_requests:
                     user_badge.status = 'granted'
                     user_badge.is_awarded = True
                     user_badge.awarded_by = request.user
                     user_badge.save(update_fields=['status', 'is_awarded', 'awarded_by'])
-
             messages.success(
                 request,
                 f'Approved {pending_count} badge request{"s" if pending_count != 1 else ""}.'

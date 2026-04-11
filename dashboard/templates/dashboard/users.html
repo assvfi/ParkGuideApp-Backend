@@ -1,16 +1,32 @@
 {% extends "dashboard/base.html" %}
 
 {% block page_title %}<i class="bi bi-people-fill me-2"></i>User Directory{% endblock %}
+{% block extra_css %}
+<style>
+    .user-avatar {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        flex: 0 0 38px;
+        border-radius: 50%;
+    }
+
+    @media (max-width: 575.98px) {
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+            flex: 0 0 38px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="glass-card">
     <div class="row g-3 mb-4">
-        {% comment %} <div class="col-md-8">
-            <form method="get" class="input-group">
-                <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
-                <input type="text" name="search" class="form-control bg-body-tertiary border-start-0" placeholder="Search by name, email, or role..." value="{{ search_query }}">
-            </form>
-        </div> {% endcomment %}
         <div class="col-md-8">
             <form method="get" class="input-group" id="userSearchForm">
                 <span class="input-group-text bg-body-tertiary border-end-0">
@@ -48,6 +64,14 @@
                     <label class="form-label">Last Name</label>
                     <input type="text" name="last_name" class="form-control">
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" name="phone_number" class="form-control" placeholder="+60123456789">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Birthdate</label>
+                    <input type="date" name="birthdate" class="form-control">
+                </div>
                 <div class="col-md-8">
                     <label class="form-label">Temporary Password</label>
                     <input type="password" name="password" class="form-control" required>
@@ -80,15 +104,47 @@
             </thead>
             <tbody id="usersTableBody">
                 {% for user in users %}
-                <tr class="user-row" data-search="{{ user.username|lower }} {{ user.email|lower }} {% if user.is_staff %}staff{% else %}guide{% endif %}">
+                <tr class="user-row" data-search="{{ user.username|lower }} {{ user.email|lower }} {{ user.first_name|lower }} {{ user.last_name|lower }} {{ user.phone_number|lower }} {% if user.is_staff %}staff{% else %}guide{% endif %}">
                     <td class="text-start">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px;">
+                            <div class="user-avatar bg-secondary d-flex align-items-center justify-content-center fw-bold">
                                 {{ user.username|first|upper }}
                             </div>
-                            <div>
-                                <div class="fw-bold">{{ user.username }}</div>
-                                <div class="text-muted small">{{ user.email }}</div>
+                            <div class="small lh-sm">
+                                <div class="mb-1">
+                                    <span class="text-muted fw-semibold">Full Name:</span>
+                                    <span class="fw-bold ms-1">
+                                        {% if user.get_full_name %}
+                                            {{ user.get_full_name }}
+                                        {% else %}
+                                            {{ user.username }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="mb-1">
+                                    <span class="text-muted fw-semibold">Email Address:</span>
+                                    <span class="ms-1">{{ user.email }}</span>
+                                </div>
+                                <div class="mb-1">
+                                    <span class="text-muted fw-semibold">Phone Number:</span>
+                                    <span class="ms-1">
+                                        {% if user.phone_number %}
+                                            {{ user.phone_number }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="text-muted fw-semibold">Birth Date:</span>
+                                    <span class="ms-1">
+                                        {% if user.birthdate %}
+                                            {{ user.birthdate|date:"d M Y" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </td>
@@ -100,7 +156,7 @@
                         {% if user.is_active %}<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Active</span>
                         {% else %}<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i> Disabled</span>{% endif %}
                     </td>
-                    <td class="text-center">{{ user.date_joined|date:"M d, Y" }}</td>
+                    <td class="text-center">{{ user.date_joined|date:"d M Y" }}</td>
                     <td class="text-center">
                         <div class="d-inline-flex justify-content-center gap-2">
                             <!-- Grant/Revoke staff access -->
@@ -132,18 +188,7 @@
                                 </button>
                             </form>
                             <!-- Edit user -->
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-info"
-                                title="Edit user"
-                                data-bs-toggle="modal"
-                                data-bs-target="#editUserModal"
-                                data-user-id="{{ user.id }}"
-                                data-username="{{ user.username }}"
-                                data-email="{{ user.email }}"
-                                data-first-name="{{ user.first_name|default:'' }}"
-                                data-last-name="{{ user.last_name|default:'' }}"
-                                data-is-staff="{% if user.is_staff %}true{% else %}false{% endif %}">
+                            <button type="button" class="btn btn-sm btn-outline-info" title="Edit user" data-bs-toggle="modal" data-bs-target="#editUserModal" data-user-id="{{ user.id }}" data-username="{{ user.username }}" data-email="{{ user.email }}" data-first-name="{{ user.first_name|default:'' }}" data-last-name="{{ user.last_name|default:'' }}" data-phone-number="{{ user.phone_number|default:'' }}" data-birthdate="{% if user.birthdate %}{{ user.birthdate|date:'Y-m-d' }}{% endif %}" data-is-staff="{% if user.is_staff %}true{% else %}false{% endif %}">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
                             <!-- Delete user -->
@@ -194,6 +239,14 @@
                             <label class="form-label">Last Name</label>
                             <input type="text" class="form-control" name="last_name" id="edit-last-name">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" name="phone_number" id="edit-phone-number" placeholder="+60123456789">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Birthdate</label>
+                            <input type="date" class="form-control" name="birthdate" id="edit-birthdate">
+                        </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_staff" id="edit-is-staff">
                             <label class="form-check-label" for="edit-is-staff">
@@ -223,6 +276,8 @@
                 document.getElementById('edit-email').value = button.getAttribute('data-email');
                 document.getElementById('edit-first-name').value = button.getAttribute('data-first-name');
                 document.getElementById('edit-last-name').value = button.getAttribute('data-last-name');
+                document.getElementById('edit-phone-number').value = button.getAttribute('data-phone-number');
+                document.getElementById('edit-birthdate').value = button.getAttribute('data-birthdate');
                 document.getElementById('edit-is-staff').checked = button.getAttribute('data-is-staff') === 'true';
             });
         }
