@@ -5,7 +5,7 @@ import uuid
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import AccountApplication, PasskeyCredential, TwoFactorAuth
+from .models import AccountApplication, PasskeyCredential, TwoFactorAuth, TwoFactorAuth
 from .services import generate_profile_image_url, upload_application_cv
 
 
