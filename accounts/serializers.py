@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import AccountApplication, PasskeyCredential
+from .models import AccountApplication, PasskeyCredential, TwoFactorAuth
 from .services import upload_application_cv
 
 
@@ -103,4 +103,14 @@ class PasskeyCredentialSerializer(serializers.ModelSerializer):
             'transports',
             'last_used_at',
             'created_at',
+        ]
+
+
+class TwoFactorAuthSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TwoFactorAuth
+        fields = [
+            'is_enabled',
+            'confirmed_at',
+            'updated_at',
         ]

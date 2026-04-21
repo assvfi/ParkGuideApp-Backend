@@ -1,7 +1,14 @@
 # accounts/views.py
 import json
+import hashlib
+import hmac
+import os
 import random
+import struct
+import time
 import uuid
+from base64 import b32decode, b32encode
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -17,11 +24,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import AccountApplication, PasskeyCredential, PasswordResetCode
+from .models import AccountApplication, PasskeyCredential, PasswordResetCode, TwoFactorAuth
 from .serializers import (
     AccountApplicationSerializer,
     PasskeyCredentialSerializer,
     RegisterSerializer,
+    TwoFactorAuthSerializer,
 )
 
 User = get_user_model()
@@ -29,10 +37,14 @@ User = get_user_model()
 PASSKEY_REGISTER_CACHE_PREFIX = 'passkey_register'
 PASSKEY_AUTH_CACHE_PREFIX = 'passkey_auth'
 PASSKEY_CACHE_TIMEOUT = 300
+TWO_FACTOR_LOGIN_CACHE_PREFIX = 'two_factor_login'
+TWO_FACTOR_CACHE_TIMEOUT = 300
+TWO_FACTOR_ISSUER = 'Park Guide App'
 
 
 def _build_user_payload(user):
     passkey_count = user.passkey_credentials.count()
+    two_factor = getattr(user, 'two_factor_auth', None)
     return {
         'id': user.id,
         'username': user.username,
@@ -45,6 +57,7 @@ def _build_user_payload(user):
         'must_change_password': user.must_change_password,
         'has_passkey': passkey_count > 0,
         'passkey_count': passkey_count,
+        'has_authenticator_2fa': bool(two_factor and two_factor.is_enabled),
     }
 
 
@@ -136,6 +149,85 @@ def _require_current_password(request):
     if not request.user.check_password(password):
         return Response({'detail': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
     return None
+
+
+def _normalize_email(value):
+    return str(value or '').strip().lower()
+
+
+def _get_or_create_two_factor(user):
+    two_factor, _ = TwoFactorAuth.objects.get_or_create(user=user)
+    return two_factor
+
+
+def _generate_totp_secret():
+    return b32encode(os.urandom(20)).decode('ascii').rstrip('=')
+
+
+def _decode_totp_secret(secret):
+    normalized = str(secret or '').strip().replace(' ', '').upper()
+    if not normalized:
+        raise ValueError('Missing TOTP secret.')
+    padding = '=' * ((8 - len(normalized) % 8) % 8)
+    return b32decode(normalized + padding, casefold=True)
+
+
+def _totp_time_step(for_time=None, interval=30):
+    timestamp = int(for_time if for_time is not None else time.time())
+    return timestamp // interval
+
+
+def _generate_totp_code(secret, step=None, digits=6):
+    key = _decode_totp_secret(secret)
+    counter = _totp_time_step() if step is None else int(step)
+    digest = hmac.new(key, struct.pack('>Q', counter), hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code_int = struct.unpack('>I', digest[offset:offset + 4])[0] & 0x7FFFFFFF
+    return str(code_int % (10 ** digits)).zfill(digits)
+
+
+def _verify_totp_code(two_factor, code, allowed_drift=1, mark_used=False):
+    normalized_code = ''.join(ch for ch in str(code or '') if ch.isdigit())
+    if len(normalized_code) != 6:
+        return False
+
+    current_step = _totp_time_step()
+    for offset in range(-allowed_drift, allowed_drift + 1):
+        step = current_step + offset
+        if step < 0:
+            continue
+        if hmac.compare_digest(_generate_totp_code(two_factor.secret, step=step), normalized_code):
+            if mark_used:
+                if two_factor.last_used_step == step:
+                    return False
+                two_factor.last_used_step = step
+                two_factor.save(update_fields=['last_used_step', 'updated_at'])
+            return True
+    return False
+
+
+def _build_totp_setup_payload(user, secret):
+    label = quote(_normalize_email(user.email))
+    issuer = quote(TWO_FACTOR_ISSUER)
+    return {
+        'secret': secret,
+        'issuer': TWO_FACTOR_ISSUER,
+        'account_name': user.email,
+        'otpauth_uri': (
+            f'otpauth://totp/{issuer}:{label}'
+            f'?secret={secret}&issuer={issuer}&algorithm=SHA1&digits=6&period=30'
+        ),
+    }
+
+
+def _cache_two_factor_login(user):
+    request_id = uuid.uuid4().hex
+    cache.set(
+        _cache_key(TWO_FACTOR_LOGIN_CACHE_PREFIX, request_id),
+        {'user_id': user.id},
+        timeout=TWO_FACTOR_CACHE_TIMEOUT,
+    )
+    return request_id
 
 
 def _cache_key(prefix, request_id):
@@ -314,7 +406,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'
 
     def validate(self, attrs):
-        email = attrs.get('email')
+        email = _normalize_email(attrs.get('email'))
         password = attrs.get('password')
 
         if not email or not password:
@@ -339,18 +431,138 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     throttle_scope = 'login'
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        email = _normalize_email(request.data.get('email'))
+        password = request.data.get('password')
 
-        try:
-            serializer.is_valid(raise_exception=True)
-        except serializers.ValidationError as exc:
-            return Response(exc.detail, status=status.HTTP_401_UNAUTHORIZED)
+        if not email or not password:
+            return Response({'detail': 'Email and password are required.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        user_obj = getattr(serializer, 'user', None)
-        if not user_obj:
-            return Response({'detail': 'Login failed.'}, status=status.HTTP_401_UNAUTHORIZED)
+        user_obj = User.objects.filter(email=email, is_active=True).first()
+        if not user_obj or not user_obj.check_password(password):
+            return Response({'detail': 'No active account found with the given credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        two_factor = getattr(user_obj, 'two_factor_auth', None)
+        if two_factor and two_factor.is_enabled and two_factor.secret:
+            return Response(
+                {
+                    'requires_2fa': True,
+                    'request_id': _cache_two_factor_login(user_obj),
+                    'detail': 'Authenticator code required.',
+                    'email': user_obj.email,
+                },
+                status=status.HTTP_200_OK,
+            )
 
         return Response(_build_auth_response(user_obj), status=status.HTTP_200_OK)
+
+
+class TwoFactorStatusView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        two_factor = getattr(request.user, 'two_factor_auth', None)
+        return Response(
+            {
+                'available': True,
+                'enabled': bool(two_factor and two_factor.is_enabled),
+                'has_setup_secret': bool(two_factor and two_factor.secret),
+                'details': TwoFactorAuthSerializer(two_factor).data if two_factor else None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFactorSetupView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        password_error = _require_current_password(request)
+        if password_error:
+            return password_error
+
+        two_factor = _get_or_create_two_factor(request.user)
+        secret = _generate_totp_secret()
+        two_factor.secret = secret
+        two_factor.is_enabled = False
+        two_factor.confirmed_at = None
+        two_factor.last_used_step = None
+        two_factor.save(update_fields=['secret', 'is_enabled', 'confirmed_at', 'last_used_step', 'updated_at'])
+
+        payload = _build_totp_setup_payload(request.user, secret)
+        payload.update({'enabled': False})
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+class TwoFactorConfirmView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        code = request.data.get('code')
+        two_factor = getattr(request.user, 'two_factor_auth', None)
+        if not two_factor or not two_factor.secret:
+            return Response({'detail': 'Set up authenticator first.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not _verify_totp_code(two_factor, code, mark_used=True):
+            return Response({'detail': 'Authenticator code is invalid or expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        two_factor.is_enabled = True
+        two_factor.confirmed_at = timezone.now()
+        two_factor.save(update_fields=['is_enabled', 'confirmed_at', 'updated_at'])
+        return Response({'detail': 'Authenticator 2FA enabled.', 'enabled': True}, status=status.HTTP_200_OK)
+
+
+class TwoFactorDisableView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        password_error = _require_current_password(request)
+        if password_error:
+            return password_error
+
+        code = request.data.get('code')
+        two_factor = getattr(request.user, 'two_factor_auth', None)
+        if not two_factor or not two_factor.is_enabled:
+            return Response({'detail': 'Authenticator 2FA is not enabled.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not _verify_totp_code(two_factor, code, mark_used=False):
+            return Response({'detail': 'Authenticator code is invalid or expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        two_factor.secret = ''
+        two_factor.is_enabled = False
+        two_factor.confirmed_at = None
+        two_factor.last_used_step = None
+        two_factor.save(update_fields=['secret', 'is_enabled', 'confirmed_at', 'last_used_step', 'updated_at'])
+        return Response({'detail': 'Authenticator 2FA disabled.', 'enabled': False}, status=status.HTTP_200_OK)
+
+
+class TwoFactorLoginVerifyView(generics.GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [throttling.ScopedRateThrottle]
+    throttle_scope = 'login'
+
+    def post(self, request, *args, **kwargs):
+        request_id = str(request.data.get('requestId') or request.data.get('request_id') or '').strip()
+        code = request.data.get('code')
+        if not request_id:
+            return Response({'detail': 'requestId is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cached = cache.get(_cache_key(TWO_FACTOR_LOGIN_CACHE_PREFIX, request_id))
+        if not cached:
+            return Response({'detail': 'Two-factor login request expired or invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(id=cached.get('user_id'), is_active=True).first()
+        if not user:
+            return Response({'detail': 'Login request is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        two_factor = getattr(user, 'two_factor_auth', None)
+        if not two_factor or not two_factor.is_enabled or not two_factor.secret:
+            return Response({'detail': 'Authenticator 2FA is not enabled for this account.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not _verify_totp_code(two_factor, code, mark_used=True):
+            return Response({'detail': 'Authenticator code is invalid or expired.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        cache.delete(_cache_key(TWO_FACTOR_LOGIN_CACHE_PREFIX, request_id))
+        return Response(_build_auth_response(user), status=status.HTTP_200_OK)
 
 
 class PasskeyStatusView(generics.GenericAPIView):

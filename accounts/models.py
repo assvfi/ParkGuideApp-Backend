@@ -156,3 +156,25 @@ class PasskeyCredential(models.Model):
     def __str__(self):
         name = self.label or 'Passkey'
         return f'{self.user.email} - {name}'
+
+
+class TwoFactorAuth(models.Model):
+    user = models.OneToOneField(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name='two_factor_auth',
+    )
+    secret = models.CharField(max_length=64, blank=True, default='')
+    is_enabled = models.BooleanField(default=False)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_used_step = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Two-factor authentication'
+        verbose_name_plural = 'Two-factor authentication'
+
+    def __str__(self):
+        state = 'enabled' if self.is_enabled else 'disabled'
+        return f'{self.user.email} - authenticator ({state})'

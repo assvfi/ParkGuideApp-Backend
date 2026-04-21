@@ -12,6 +12,11 @@ from .views import (
     PasskeyRegisterVerifyView,
     PasskeyStatusView,
     RegisterView,
+    TwoFactorConfirmView,
+    TwoFactorDisableView,
+    TwoFactorLoginVerifyView,
+    TwoFactorSetupView,
+    TwoFactorStatusView,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -22,6 +27,11 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('forgot-password/', ForgotPasswordRequestView.as_view(), name='forgot_password_request'),
     path('forgot-password/confirm/', ForgotPasswordConfirmView.as_view(), name='forgot_password_confirm'),
+    path('2fa/status/', TwoFactorStatusView.as_view(), name='two_factor_status'),
+    path('2fa/setup/', TwoFactorSetupView.as_view(), name='two_factor_setup'),
+    path('2fa/confirm/', TwoFactorConfirmView.as_view(), name='two_factor_confirm'),
+    path('2fa/disable/', TwoFactorDisableView.as_view(), name='two_factor_disable'),
+    path('2fa/login/verify/', TwoFactorLoginVerifyView.as_view(), name='two_factor_login_verify'),
     path('passkeys/status/', PasskeyStatusView.as_view(), name='passkey_status'),
     path('passkeys/register/options/', PasskeyRegisterOptionsView.as_view(), name='passkey_register_options'),
     path('passkeys/register/verify/', PasskeyRegisterVerifyView.as_view(), name='passkey_register_verify'),
