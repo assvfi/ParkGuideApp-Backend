@@ -868,5 +868,285 @@
         ]
       }
     ]
+  },
+  {
+    "code": "ar-biodiversity-101",
+    "title": {
+      "en": "AR Forest Biodiversity Training",
+      "ms": "Latihan AR Biodiversiti Hutan",
+      "zh": "AR森林生物多样性培训"
+    },
+    "description": {
+      "en": "Immersive 360-degree guide training for explaining forest layers, plant diversity, and ecosystem balance to visitors.",
+      "ms": "Latihan panduan 360 darjah secara imersif untuk menerangkan lapisan hutan, kepelbagaian tumbuhan, dan keseimbangan ekosistem kepada pelawat.",
+      "zh": "沉浸式360度导游培训，用于向游客讲解森林层次、植物多样性和生态平衡。"
+    },
+    "thumbnail": "https://firebasestorage.googleapis.com/v0/b/parkguideapp-c8517.firebasestorage.app/o/assests%2F360%2FAdobeStock_15550322.jpeg?alt=media&token=c9d64eed-c48a-4075-b9e3-35314566cd68",
+    "is_published": true,
+    "prerequisites": [],
+    "chapters": [
+      {
+        "title": {
+          "en": "Biodiversity Interpretation Scenario",
+          "ms": "Senario Interpretasi Biodiversiti",
+          "zh": "生物多样性讲解情境"
+        },
+        "description": {
+          "en": "Practise identifying teaching moments in a forest panorama.",
+          "ms": "Latih mengenal pasti peluang penerangan dalam panorama hutan.",
+          "zh": "练习在森林全景中识别讲解时机。"
+        },
+        "lessons": [
+          {
+            "title": {
+              "en": "Canopy and Understory Talking Points",
+              "ms": "Isi Penerangan Kanopi dan Lapisan Bawah",
+              "zh": "林冠层和林下层讲解要点"
+            },
+            "content_text": {
+              "en": "Use the AR scene to explain how the canopy, understory, and forest floor create habitats for different species.",
+              "ms": "Gunakan adegan AR untuk menerangkan bagaimana kanopi, lapisan bawah, dan lantai hutan membentuk habitat untuk spesies berbeza.",
+              "zh": "使用AR场景讲解林冠层、林下层和森林地面如何为不同物种创造栖息地。"
+            },
+            "content_images": [
+              "https://firebasestorage.googleapis.com/v0/b/parkguideapp-c8517.firebasestorage.app/o/assests%2F360%2FAdobeStock_15550322.jpeg?alt=media&token=c9d64eed-c48a-4075-b9e3-35314566cd68"
+            ],
+            "content_videos": [],
+            "estimated_time": 12
+          }
+        ],
+        "exercises": [
+          {
+            "title": {
+              "en": "Biodiversity Guide Decision",
+              "ms": "Keputusan Panduan Biodiversiti",
+              "zh": "生物多样性导游决策"
+            },
+            "passing_score": 70,
+            "questions": [
+              {
+                "question_text": {
+                  "en": "What should a guide explain when visitors notice fallen wood on the forest floor?",
+                  "ms": "Apakah yang patut diterangkan apabila pelawat melihat kayu tumbang di lantai hutan?",
+                  "zh": "当游客注意到森林地面上的倒木时，导游应解释什么？"
+                },
+                "question_type": "multiple_choice",
+                "options": [
+                  {
+                    "text": {
+                      "en": "It supports decomposers and nutrient recycling",
+                      "ms": "Ia menyokong pereput dan kitar semula nutrien",
+                      "zh": "它支持分解者和养分循环"
+                    },
+                    "is_correct": true
+                  },
+                  {
+                    "text": {
+                      "en": "It should be removed to make the forest tidy",
+                      "ms": "Ia perlu dibuang supaya hutan kelihatan kemas",
+                      "zh": "应将其清除以保持森林整洁"
+                    },
+                    "is_correct": false
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "quizzes": [
+          {
+            "title": {
+              "en": "AR Biodiversity Reflection",
+              "ms": "Refleksi AR Biodiversiti",
+              "zh": "AR生物多样性反思"
+            },
+            "time_limit": 10,
+            "passing_score": 70,
+            "questions": [
+              {
+                "question_text": {
+                  "en": "Which visitor behaviour best protects forest regeneration?",
+                  "ms": "Tingkah laku pelawat manakah paling melindungi pertumbuhan semula hutan?",
+                  "zh": "哪种游客行为最能保护森林更新？"
+                },
+                "question_type": "multiple_choice",
+                "options": [
+                  {
+                    "text": {
+                      "en": "Stay on marked trails",
+                      "ms": "Kekal di laluan bertanda",
+                      "zh": "留在标记步道上"
+                    },
+                    "is_correct": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "code": "ar-ecotourism-101",
+    "title": {
+      "en": "AR Eco-tourism Practice",
+      "ms": "Amalan AR Eko-pelancongan",
+      "zh": "AR生态旅游实践"
+    },
+    "description": {
+      "en": "Immersive scenario training for coaching visitors on low-impact movement, photography, waste, and trail etiquette.",
+      "ms": "Latihan senario imersif untuk membimbing pelawat tentang pergerakan rendah impak, fotografi, sisa, dan etika laluan.",
+      "zh": "沉浸式情境培训，用于指导游客进行低影响移动、摄影、垃圾处理和步道礼仪。"
+    },
+    "thumbnail": "https://firebasestorage.googleapis.com/v0/b/parkguideapp-c8517.firebasestorage.app/o/assests%2F360%2FAdobeStock_15550322.jpeg?alt=media&token=c9d64eed-c48a-4075-b9e3-35314566cd68",
+    "is_published": true,
+    "prerequisites": [],
+    "chapters": [
+      {
+        "title": {
+          "en": "Low-impact Visitor Management Scenario",
+          "ms": "Senario Pengurusan Pelawat Rendah Impak",
+          "zh": "低影响游客管理情境"
+        },
+        "description": {
+          "en": "Practise giving friendly but firm eco-tourism reminders during a guided walk.",
+          "ms": "Latih memberi peringatan eko-pelancongan yang mesra tetapi tegas semasa lawatan berpandu.",
+          "zh": "练习在导览步行中给出友好但坚定的生态旅游提醒。"
+        },
+        "lessons": [
+          {
+            "title": {
+              "en": "Trail Etiquette and Leave No Trace",
+              "ms": "Etika Laluan dan Tidak Meninggalkan Kesan",
+              "zh": "步道礼仪与无痕原则"
+            },
+            "content_text": {
+              "en": "Use the AR hotspots to rehearse visitor instructions for staying on trails, keeping noise low, and carrying out waste.",
+              "ms": "Gunakan titik interaktif AR untuk melatih arahan kepada pelawat supaya kekal di laluan, mengurangkan bunyi, dan membawa keluar sisa.",
+              "zh": "使用AR热点练习游客指引，包括留在步道上、降低噪音和带走垃圾。"
+            },
+            "content_images": [
+              "https://firebasestorage.googleapis.com/v0/b/parkguideapp-c8517.firebasestorage.app/o/assests%2F360%2FAdobeStock_15550322.jpeg?alt=media&token=c9d64eed-c48a-4075-b9e3-35314566cd68"
+            ],
+            "content_videos": [],
+            "estimated_time": 12
+          }
+        ],
+        "exercises": [],
+        "quizzes": [
+          {
+            "title": {
+              "en": "Eco-tourism AR Check",
+              "ms": "Semakan AR Eko-pelancongan",
+              "zh": "生态旅游AR检查"
+            },
+            "time_limit": 10,
+            "passing_score": 70,
+            "questions": [
+              {
+                "question_text": {
+                  "en": "What is the best guide response when visitors step off the trail for photos?",
+                  "ms": "Apakah tindak balas terbaik apabila pelawat keluar dari laluan untuk mengambil gambar?",
+                  "zh": "当游客离开步道拍照时，导游最佳回应是什么？"
+                },
+                "question_type": "multiple_choice",
+                "options": [
+                  {
+                    "text": {
+                      "en": "Set a safe photo point and explain why the trail boundary matters",
+                      "ms": "Tetapkan tempat bergambar selamat dan terangkan kepentingan sempadan laluan",
+                      "zh": "设置安全拍照点并解释步道边界的重要性"
+                    },
+                    "is_correct": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "code": "ar-wildlife-101",
+    "title": {
+      "en": "AR Wildlife Encounter Response",
+      "ms": "Respons AR Pertemuan Hidupan Liar",
+      "zh": "AR野生动物遭遇应对"
+    },
+    "description": {
+      "en": "Immersive safety practice for keeping visitors calm, maintaining distance, preventing feeding, and rerouting when wildlife blocks a trail.",
+      "ms": "Latihan keselamatan imersif untuk menenangkan pelawat, mengekalkan jarak, mencegah pemberian makanan, dan menukar laluan apabila hidupan liar menghalang laluan.",
+      "zh": "沉浸式安全练习，用于保持游客冷静、保持距离、防止喂食，并在野生动物阻挡步道时改道。"
+    },
+    "thumbnail": "https://firebasestorage.googleapis.com/v0/b/parkguideapp-c8517.firebasestorage.app/o/assests%2F360%2FAdobeStock_15550322.jpeg?alt=media&token=c9d64eed-c48a-4075-b9e3-35314566cd68",
+    "is_published": true,
+    "prerequisites": [],
+    "chapters": [
+      {
+        "title": {
+          "en": "Safe Wildlife Encounter Scenario",
+          "ms": "Senario Selamat Pertemuan Hidupan Liar",
+          "zh": "安全野生动物遭遇情境"
+        },
+        "description": {
+          "en": "Practise calm group control and safe wildlife viewing decisions.",
+          "ms": "Latih kawalan kumpulan yang tenang dan keputusan pemerhatian hidupan liar yang selamat.",
+          "zh": "练习冷静控制团队和安全观察野生动物的决策。"
+        },
+        "lessons": [
+          {
+            "title": {
+              "en": "Distance, Feeding, and Rerouting Protocols",
+              "ms": "Protokol Jarak, Pemberian Makanan, dan Penukaran Laluan",
+              "zh": "距离、喂食和改道规程"
+            },
+            "content_text": {
+              "en": "Use the AR simulation to practise stopping the group, increasing distance, preventing feeding, and choosing a safe route.",
+              "ms": "Gunakan simulasi AR untuk melatih menghentikan kumpulan, menambah jarak, mencegah pemberian makanan, dan memilih laluan selamat.",
+              "zh": "使用AR模拟练习停止队伍、增加距离、防止喂食并选择安全路线。"
+            },
+            "content_images": [
+              "https://firebasestorage.googleapis.com/v0/b/parkguideapp-c8517.firebasestorage.app/o/assests%2F360%2FAdobeStock_15550322.jpeg?alt=media&token=c9d64eed-c48a-4075-b9e3-35314566cd68"
+            ],
+            "content_videos": [],
+            "estimated_time": 12
+          }
+        ],
+        "exercises": [],
+        "quizzes": [
+          {
+            "title": {
+              "en": "Wildlife Response AR Check",
+              "ms": "Semakan AR Respons Hidupan Liar",
+              "zh": "野生动物应对AR检查"
+            },
+            "time_limit": 10,
+            "passing_score": 70,
+            "questions": [
+              {
+                "question_text": {
+                  "en": "What should a guide do first when wildlife appears close to the trail?",
+                  "ms": "Apakah perkara pertama yang patut dilakukan apabila hidupan liar muncul berhampiran laluan?",
+                  "zh": "当野生动物出现在步道附近时，导游首先应做什么？"
+                },
+                "question_type": "multiple_choice",
+                "options": [
+                  {
+                    "text": {
+                      "en": "Stop the group calmly and create safe distance",
+                      "ms": "Hentikan kumpulan dengan tenang dan wujudkan jarak selamat",
+                      "zh": "冷静停止队伍并保持安全距离"
+                    },
+                    "is_correct": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]
