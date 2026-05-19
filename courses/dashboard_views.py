@@ -14,6 +14,7 @@ from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 
 from accounts.models import CustomUser
+from accounts.permissions import IsAdmin
 from .models import (
     Course, Chapter, CourseEnrollment, ChapterProgress, LessonProgress,
     PracticeAttempt, QuizAttempt
@@ -58,18 +59,12 @@ class UserProgressViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = UserProgressSummarySerializer(data)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['get'], permission_classes=[IsAdmin])
     def summary(self, request):
         """
         Get paginated list of all users' progress (admin only)
         GET /api/dashboard/user-progress/summary/?page=1&page_size=20
         """
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response(
-                {'error': 'This endpoint requires admin privileges'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 20))
         
@@ -177,20 +172,14 @@ class UserProgressViewSet(viewsets.ReadOnlyModelViewSet):
 class DashboardStatsView(APIView):
     """
     Overall dashboard statistics
-    
+
     GET /api/dashboard/stats/overview/ - Get overview statistics
     GET /api/dashboard/stats/leaderboard/ - Get user leaderboard
     """
-    permission_classes = [permissions.IsAuthenticated]
-    
+    permission_classes = [IsAdmin]
+
     def get(self, request):
         """Get dashboard overview"""
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response(
-                {'error': 'This endpoint requires admin privileges'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         # Catalog stats
         courses_total = Course.objects.count()
         courses_published = Course.objects.filter(is_published=True).count()
@@ -238,20 +227,14 @@ class DashboardStatsView(APIView):
 class LeaderboardView(APIView):
     """
     User leaderboard based on learning achievements
-    
+
     GET /api/dashboard/leaderboard/?metric=courses_completed&limit=20
     Metrics: courses_completed, avg_score, learning_time, quizzes_passed
     """
-    permission_classes = [permissions.IsAuthenticated]
-    
+    permission_classes = [IsAdmin]
+
     def get(self, request):
         """Get leaderboard"""
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response(
-                {'error': 'This endpoint requires admin privileges'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         metric = request.query_params.get('metric', 'courses_completed')
         limit = int(request.query_params.get('limit', 20))
         
@@ -356,12 +339,9 @@ class SpoofProgressView(APIView):
     - progress: float between 0-100 (used for 'partial')
     - score: float (optional final score)
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
-        if not (request.user.is_staff or request.user.is_superuser):
-            return Response({'error': 'Admin privileges required'}, status=status.HTTP_403_FORBIDDEN)
-
         payload = request.data or {}
         user_ids = payload.get('users')
         emails = payload.get('emails')

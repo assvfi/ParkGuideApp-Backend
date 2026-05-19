@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from accounts.permissions import IsAdmin, IsLearner
 from django.db.models import Q, F, Count
 from django.utils import timezone
 from .models import (
@@ -74,7 +75,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         
         return queryset.order_by('code')
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsLearner])
     def enroll(self, request, pk=None):
         """Enroll user in course"""
         course = self.get_object()
@@ -101,7 +102,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 class CourseEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
     """User's course enrollments"""
     serializer_class = CourseEnrollmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
     
     def get_queryset(self):
         return CourseEnrollment.objects.filter(user=self.request.user).select_related('course').order_by('-updated_at')
@@ -115,8 +116,12 @@ class ChapterViewSet(viewsets.ModelViewSet):
     """Chapter details and progress"""
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    permission_classes = [IsAuthenticated]
-    
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
@@ -149,8 +154,12 @@ class LessonViewSet(viewsets.ModelViewSet):
     """Lesson content and progress"""
     queryset = Lesson.objects.all()
     serializer_class = LessonDetailSerializer
-    permission_classes = [IsAuthenticated]
-    
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
     def get_serializer_class(self):
         """Use CreateSerializer for write operations"""
         if self.action in ['create', 'update', 'partial_update']:
@@ -190,7 +199,7 @@ class LessonViewSet(viewsets.ModelViewSet):
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsLearner])
     def mark_complete(self, request, pk=None):
         """Mark lesson as completed"""
         lesson = self.get_object()
@@ -352,8 +361,12 @@ class PracticeExerciseViewSet(viewsets.ModelViewSet):
     """Practice exercises"""
     queryset = PracticeExercise.objects.all()
     serializer_class = PracticeExerciseSerializer
-    permission_classes = [IsAuthenticated]
-    
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
     def get_serializer_class(self):
         """Use CreateSerializer for write operations"""
         if self.action in ['create', 'update', 'partial_update']:
@@ -393,7 +406,7 @@ class PracticeExerciseViewSet(viewsets.ModelViewSet):
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsLearner])
     def submit(self, request, pk=None):
         """Submit practice answers"""
         exercise = self.get_object()
@@ -493,8 +506,12 @@ class QuizViewSet(viewsets.ModelViewSet):
     """Quiz interface"""
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
-    permission_classes = [IsAuthenticated]
-    
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
+
     def get_serializer_class(self):
         """Use CreateSerializer for write operations"""
         if self.action in ['create', 'update', 'partial_update']:
@@ -534,7 +551,7 @@ class QuizViewSet(viewsets.ModelViewSet):
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsLearner])
     def submit(self, request, pk=None):
         """Submit quiz"""
         quiz = self.get_object()
@@ -643,7 +660,7 @@ class ModuleViewSet(viewsets.ModelViewSet):
 class ModuleProgressViewSet(viewsets.ModelViewSet):
     """Legacy module progress view"""
     serializer_class = ModuleProgressSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     def get_queryset(self):
         return ModuleProgress.objects.filter(user=self.request.user)
@@ -669,7 +686,7 @@ class ModuleProgressViewSet(viewsets.ModelViewSet):
 class CourseProgressViewSet(viewsets.ModelViewSet):
     """Legacy course progress view"""
     serializer_class = CourseProgressSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     def get_queryset(self):
         return CourseProgress.objects.filter(user=self.request.user)
@@ -697,7 +714,7 @@ class CourseProgressViewSet(viewsets.ModelViewSet):
 
 class CompleteModuleView(APIView):
     """Legacy module completion endpoint"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     def post(self, request):
         module_id = request.data.get('module_id')

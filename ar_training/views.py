@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import IsLearner
 from rest_framework.response import Response
 
 from .models import ARHotspot, ARQuizQuestion, ARScenario, ARTrainingProgress
@@ -16,7 +17,7 @@ from .serializers import (
 
 
 class ARScenarioViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     def get_queryset(self):
         if not ARScenario.objects.exists():
@@ -56,7 +57,7 @@ class ARScenarioViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ARHotspotViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     @action(detail=True, methods=['post'])
     def discover(self, request, pk=None):
@@ -84,7 +85,7 @@ class ARHotspotViewSet(viewsets.ViewSet):
 
 
 class ARQuizViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     @action(detail=True, methods=['post'])
     def answer(self, request, pk=None):
@@ -123,7 +124,7 @@ class ARQuizViewSet(viewsets.ViewSet):
 
 class ARTrainingProgressViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ARTrainingProgressSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     def get_queryset(self):
         return ARTrainingProgress.objects.filter(user=self.request.user).select_related('scenario')
@@ -138,7 +139,7 @@ class ARTrainingProgressViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ARTrainingStatisticsViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     @action(detail=False, methods=['get'])
     def my_stats(self, request):
