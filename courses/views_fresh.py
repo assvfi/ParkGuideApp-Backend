@@ -5,7 +5,8 @@ Simple CRUD operations with proper HTTP method handling
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
+from accounts.permissions import IsAdmin, IsLearner
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
@@ -173,7 +174,10 @@ class CourseViewSet(viewsets.ModelViewSet):
     DELETE /api/courses/{id}/ - Delete course
     POST /api/courses/{id}/enroll/ - Enroll user
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = Course.objects.filter(is_published=True)
@@ -221,7 +225,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         """Update existing course"""
         serializer.save()
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsLearner])
     def enroll(self, request, pk=None):
         """Enroll user in course"""
         course = self.get_object()
@@ -273,7 +277,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 class CourseEnrollmentViewSet(viewsets.ReadOnlyModelViewSet):
     """List current user's course enrollments"""
     serializer_class = CourseEnrollmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsLearner]
 
     def get_queryset(self):
         return CourseEnrollment.objects.filter(user=self.request.user).order_by('-updated_at')
@@ -292,7 +296,10 @@ class ChapterViewSet(viewsets.ModelViewSet):
     PUT /api/chapters/{id}/ - Update chapter
     DELETE /api/chapters/{id}/ - Delete chapter
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = Chapter.objects.all()
@@ -340,7 +347,10 @@ class LessonViewSet(viewsets.ModelViewSet):
     DELETE /api/lessons/{id}/ - Delete lesson
     POST /api/lessons/{id}/mark_complete/ - Mark as complete
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = Lesson.objects.all()
@@ -411,7 +421,10 @@ class PracticeExerciseViewSet(viewsets.ModelViewSet):
     DELETE /api/practice/{id}/ - Delete exercise
     POST /api/practice/{id}/submit/ - Submit exercise
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = PracticeExercise.objects.all()
@@ -629,7 +642,10 @@ class QuizViewSet(viewsets.ModelViewSet):
     DELETE /api/quizzes/{id}/ - Delete quiz
     POST /api/quizzes/{id}/submit/ - Submit quiz
     """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         queryset = Quiz.objects.all()
