@@ -28,6 +28,9 @@ from courses.serializers_fresh import (
 )
 from courses.prerequisite_utils import get_effective_prerequisite_codes
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def update_chapter_progress_for_user(user, chapter):
     """Recalculate chapter progress using the same rules as the legacy API."""
@@ -505,30 +508,37 @@ class PracticeExerciseViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        answers = request.data.get('answers', {})
-        score, _details = self._grade_answers(exercise.questions or [], answers)
-        passed = score >= exercise.passing_score
+        try:
+            answers = request.data.get('answers', {})
+            score, _details = self._grade_answers(exercise.questions or [], answers)
+            passed = score >= exercise.passing_score
 
-        attempt = self._create_practice_attempt(
-            user=user,
-            exercise=exercise,
-            answers=answers,
-            score=score,
-            passed=passed,
-        )
-        update_chapter_progress_for_user(user, exercise.chapter)
-        update_course_enrollment_progress(user, exercise.chapter.course)
+            attempt = self._create_practice_attempt(
+                user=user,
+                exercise=exercise,
+                answers=answers,
+                score=score,
+                passed=passed,
+            )
+            update_chapter_progress_for_user(user, exercise.chapter)
+            update_course_enrollment_progress(user, exercise.chapter.course)
 
-        return Response(
-            {
-                'message': 'Exercise submitted',
-                'score': score,
-                'passing_score': exercise.passing_score,
-                'passed': passed,
-                'attempt_number': attempt.attempt_number,
-            },
-            status=status.HTTP_201_CREATED
-        )
+            return Response(
+                {
+                    'message': 'Exercise submitted',
+                    'score': score,
+                    'passing_score': exercise.passing_score,
+                    'passed': passed,
+                    'attempt_number': attempt.attempt_number,
+                },
+                status=status.HTTP_201_CREATED
+            )
+        except Exception:
+            logger.error('Practice submission failed for exercise %s', pk, exc_info=True)
+            return Response(
+                {'error': 'An unexpected error occurred. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @staticmethod
     def _grade_answers(questions, answers):
@@ -716,34 +726,45 @@ class QuizViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
-        answers = request.data.get('answers', {})
-        time_spent = request.data.get('time_spent', 0)
-        score, details = PracticeExerciseViewSet._grade_answers(quiz.questions or [], answers)
-        passed = score >= quiz.passing_score
+        try:
+            answers = request.data.get('answers', {})
+            try:
+                time_spent = int(request.data.get('time_spent', 0))
+            except (TypeError, ValueError):
+                time_spent = 0
 
-        attempt = self._create_quiz_attempt(
-            user=user,
-            quiz=quiz,
-            answers=answers,
-            score=score,
-            passed=passed,
-            time_spent=time_spent,
-        )
-        update_chapter_progress_for_user(user, quiz.chapter)
-        enrollment = update_course_enrollment_progress(user, quiz.chapter.course)
+            score, details = PracticeExerciseViewSet._grade_answers(quiz.questions or [], answers)
+            passed = score >= quiz.passing_score
 
-        return Response(
-            {
-                'message': 'Quiz submitted',
-                'score': score,
-                'passing_score': quiz.passing_score,
-                'passed': passed,
-                'attempt_number': attempt.attempt_number,
-                'details': details,
-                'course_progress_percentage': enrollment.progress_percentage,
-            },
-            status=status.HTTP_201_CREATED
-        )
+            attempt = self._create_quiz_attempt(
+                user=user,
+                quiz=quiz,
+                answers=answers,
+                score=score,
+                passed=passed,
+                time_spent=time_spent,
+            )
+            update_chapter_progress_for_user(user, quiz.chapter)
+            enrollment = update_course_enrollment_progress(user, quiz.chapter.course)
+
+            return Response(
+                {
+                    'message': 'Quiz submitted',
+                    'score': score,
+                    'passing_score': quiz.passing_score,
+                    'passed': passed,
+                    'attempt_number': attempt.attempt_number,
+                    'details': details,
+                    'course_progress_percentage': enrollment.progress_percentage,
+                },
+                status=status.HTTP_201_CREATED
+            )
+        except Exception:
+            logger.error('Quiz submission failed for quiz %s', pk, exc_info=True)
+            return Response(
+                {'error': 'An unexpected error occurred. Please try again.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @staticmethod
     def _create_quiz_attempt(user, quiz, answers, score, passed, time_spent):

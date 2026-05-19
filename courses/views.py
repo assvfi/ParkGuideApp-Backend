@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from accounts.permissions import IsAdmin, IsLearner
+
+import logging
+logger = logging.getLogger(__name__)
 from django.db.models import Q, F, Count
 from django.utils import timezone
 from .models import (
@@ -220,20 +223,20 @@ class LessonViewSet(viewsets.ModelViewSet):
     @staticmethod
     def _update_chapter_progress(chapter):
         """Recalculate chapter progress"""
-        print(f"[_update_chapter_progress] Updating progress for chapter {chapter.id}: {chapter.title}")
+        logger.info('Updating progress for chapter %s: %s', chapter.id, chapter.title)
         
         for enrollment in CourseEnrollment.objects.filter(course=chapter.course):
-            print(f"[_update_chapter_progress]   Processing user: {enrollment.user.id}")
+            logger.info('Processing user: %s', enrollment.user.id)
             
             lessons = chapter.lessons.all()
-            print(f"[_update_chapter_progress]   Total lessons in chapter: {lessons.count()}")
+            logger.info('Total lessons in chapter: %s', lessons.count())
             
             completed = LessonProgress.objects.filter(
                 user=enrollment.user,
                 lesson__in=lessons,
                 completed=True
             ).count()
-            print(f"[_update_chapter_progress]   Completed lessons: {completed}")
+            logger.info('Completed lessons: %s', completed)
             
             total = lessons.count()
             
@@ -253,7 +256,7 @@ class LessonViewSet(viewsets.ModelViewSet):
             
             # Calculate base progress for lessons
             lessons_progress = (completed / total * pct_per_component) if total > 0 else 0
-            print(f"[_update_chapter_progress]   Lessons progress: {lessons_progress}%")
+            logger.info('Lessons progress: %s%%', lessons_progress)
             
             # Check if practice passed
             practice_pct = 0
@@ -272,7 +275,7 @@ class LessonViewSet(viewsets.ModelViewSet):
                 # If no practice exercise exists, auto-pass it and add its percentage
                 practice_pct = pct_per_component
                 practice_passed = True
-            print(f"[_update_chapter_progress]   Practice exists: {has_practice}, passed: {practice_passed}, pct: {practice_pct}%")
+            logger.info('Practice exists: %s, passed: %s, pct: %s%%', has_practice, practice_passed, practice_pct)
             
             # Check if quiz passed
             quiz_pct = 0
@@ -291,7 +294,7 @@ class LessonViewSet(viewsets.ModelViewSet):
                 # If no quiz exists, auto-pass it and add its percentage
                 quiz_pct = pct_per_component
                 quiz_passed = True
-            print(f"[_update_chapter_progress]   Quiz exists: {has_quiz}, passed: {quiz_passed}, pct: {quiz_pct}%")
+            logger.info('Quiz exists: %s, passed: %s, pct: %s%%', has_quiz, quiz_passed, quiz_pct)
             
             # Calculate total progress: always cap at 100%
             total_progress = min(100, lessons_progress + practice_pct + quiz_pct)
@@ -301,7 +304,7 @@ class LessonViewSet(viewsets.ModelViewSet):
             # - Practice is passed (if it exists) 
             # - Quiz is passed (if it exists)
             is_complete = completed == total and practice_passed and quiz_passed
-            print(f"[_update_chapter_progress]   Total progress: {total_progress}%, Complete: {is_complete}")
+            logger.info('Total progress: %s%%, Complete: %s', total_progress, is_complete)
             
             ChapterProgress.objects.update_or_create(
                 user=enrollment.user,
@@ -350,7 +353,7 @@ class LessonViewSet(viewsets.ModelViewSet):
                 enrollment.status = 'in_progress'
             
             enrollment.save()
-            print(f"[_update_course_enrollment_progress] {enrollment.user.username} - {course.code}: {completed_chapters}/{total_chapters} ({progress_percentage:.1f}%)")
+            logger.info('Enrollment progress %s - %s: %s/%s (%.1f%%)', enrollment.user.username, course.code, completed_chapters, total_chapters, progress_percentage)
 
 
 # ============================================================================
@@ -569,10 +572,10 @@ class QuizViewSet(viewsets.ModelViewSet):
             # Grade the quiz with error handling
             try:
                 score, details = PracticeExerciseViewSet._grade_answers(quiz, answers)
-            except Exception as e:
-                print(f"[QuizViewSet] Error grading quiz {pk}: {str(e)}")
+            except Exception:
+                logger.error('Error grading quiz %s', pk, exc_info=True)
                 return Response(
-                    {'error': f'Error grading quiz: {str(e)}'},
+                    {'error': 'An unexpected error occurred. Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -636,12 +639,10 @@ class QuizViewSet(viewsets.ModelViewSet):
             
             return Response(response_data)
             
-        except Exception as e:
-            print(f"[QuizViewSet] Unexpected error in submit: {str(e)}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            logger.error('Unexpected error in quiz submit for quiz %s', pk, exc_info=True)
             return Response(
-                {'error': f'Server error: {str(e)}'},
+                {'error': 'An unexpected error occurred. Please try again.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
